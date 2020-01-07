@@ -6,9 +6,17 @@ parameters:
     type: boolean
     default: false
 
-  test_string:
+  dist_tar_gz_url:
     type: string
-    default: "nonono"
+    default: "https://for-file-transfer.s3-ap-northeast-1.amazonaws.com/dist.tar.gz"
+
+  public_path:
+    type: string
+    default: "."
+
+  subdomain:
+    type: string
+    default: "none"
 
 executors:
 
@@ -54,7 +62,12 @@ jobs:
       - run:
           name: Test string
           command: |
-            echo << pipeline.parameters.test_string >>
+            mkdir /tmp/work
+            cd /tmp/work
+            curl -Lo dist.tar.gz << pipeline.parameters.dist_tar_gz_url >>
+            aws s3 sync --delete \
+              << pipeline.parameters.public_path >> \
+              s3://review-for-spa/<< pipeline.parameters.subdomain >>
 
 workflows:
 
