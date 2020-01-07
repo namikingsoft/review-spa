@@ -24,7 +24,7 @@ parameters:
 
   github_context:
     type: string
-    default: "review/app"
+    default: "Review App"
 
   archive_url:
     type: string
@@ -92,7 +92,7 @@ jobs:
               -d '{
                 "state": "success",
                 "target_url": "https://<< pipeline.parameters.sub_domain >>.review-for-spa.namiking.net",
-                "description": "Review App Ready",
+                "description": "Deployment successful",
                 "context": "<< pipeline.parameters.github_context >>" 
               }'
 
