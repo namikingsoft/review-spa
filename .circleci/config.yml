@@ -92,7 +92,7 @@ jobs:
               -d '{
                 "state": "success",
                 "target_url": "https://<< pipeline.parameters.sub_domain >>.review-for-spa.namiking.net",
-                "description": "Deployment successful",
+                "description": "Ready for Review",
                 "context": "<< pipeline.parameters.github_context >>" 
               }'
 
