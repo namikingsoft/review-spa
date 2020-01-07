@@ -1,10 +1,15 @@
-# common
-
 data "aws_route53_zone" "review_for_spa_zone" {
   name = local.route53_zone_name
 }
 
-# review_for_spa
+module "urlrewrite_for_spa" {
+  source = "./modules/lambda-urlrewrite"
+  providers = {
+    aws.global = aws.use1
+  }
+
+  function_name = "${local.review_for_spa_app_name}-urlrewrite"
+}
 
 module "review_for_spa_acm" {
   source = "./modules/acm-certificate"
@@ -33,8 +38,9 @@ module "review_for_spa_cdn" {
   origin_bucket_name  = local.review_for_spa_app_name
   default_ttl         = local.review_for_spa_default_ttl
   logging_bucket_name = module.review_for_spa_logging.domain_name
-  aliases             = [local.review_for_spa_app_domain]
   acm_certificate_arn = module.review_for_spa_acm.acm_certification_arn
+  lambda_arns         = [module.urlrewrite_for_spa.lambda_arn]
+  aliases             = [local.review_for_spa_app_domain]
 }
 
 

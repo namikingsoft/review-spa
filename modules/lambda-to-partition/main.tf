@@ -36,11 +36,11 @@ module "iam_role" {
 resource "aws_lambda_function" "to_partition" {
   filename         = data.archive_file.lambda.output_path
   function_name    = var.function_name
+  role             = module.iam_role.arn
   handler          = "index.handler"
   runtime          = "nodejs10.x"
   source_code_hash = filebase64sha256("${data.archive_file.lambda.output_path}")
   publish          = "true"
-  role             = module.iam_role.arn
 }
 
 resource "aws_s3_bucket_notification" "loggings" {

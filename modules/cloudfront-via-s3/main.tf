@@ -63,6 +63,16 @@ resource "aws_cloudfront_distribution" "cdn" {
       }
     }
 
+    dynamic "lambda_function_association" {
+      for_each = var.lambda_arns
+      iterator = lambda_arn
+
+      content {
+        event_type = "viewer-request"
+        lambda_arn = lambda_arn.value
+      }
+    }
+
     viewer_protocol_policy = "redirect-to-https"
     min_ttl                = 0
     default_ttl            = var.default_ttl
@@ -74,12 +84,12 @@ resource "aws_cloudfront_distribution" "cdn" {
   aliases = var.aliases
 
   # for browser history 
-  custom_error_response {
-    error_code            = 403
-    error_caching_min_ttl = 300 # default
-    response_code         = 200
-    response_page_path    = "/index.html"
-  }
+  # custom_error_response {
+  #   error_code            = 403
+  #   error_caching_min_ttl = 300 # default
+  #   response_code         = 200
+  #   response_page_path    = "/index.html"
+  # }
 
   restrictions {
     geo_restriction {

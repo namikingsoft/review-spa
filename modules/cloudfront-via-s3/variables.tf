@@ -23,3 +23,9 @@ variable "aliases" {
   default     = []
   description = "別名のドメイン名 (e.g. review-for-spa.example.io)"
 }
+
+variable "lambda_arns" {
+  type        = list(string)
+  default     = []
+  description = "Origin-Request に設定する Lambda Edge の ARN 配列 (e.g. [arn:****])"
+}
