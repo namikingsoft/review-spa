@@ -1,0 +1,31 @@
+version: 2.1
+
+executors:
+
+  default:
+    working_directory: ~/workspace
+    docker:
+      - image: circleci/node:10.18.0
+    environment:
+      NPM_CONFIG_LOGLEVEL: warn
+      TERM: xterm-color
+      TZ: /usr/share/zoneinfo/Asia/Tokyo
+
+
+commands:
+
+jobs:
+
+  terraform_plan:
+    executor: default
+    steps:
+      - checkout
+      - run:
+          name: Test
+          command: echo test
+
+workflows:
+
+  build:
+    jobs:
+      - terraform_plan
