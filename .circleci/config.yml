@@ -6,6 +6,26 @@ parameters:
     type: boolean
     default: false
 
+  github_token:
+    type: string
+    default: "none"
+
+  github_username:
+    type: string
+    default: "username"
+
+  github_reponame:
+    type: string
+    default: "reponame"
+
+  github_sha1:
+    type: string
+    default: "none"
+
+  github_context:
+    type: string
+    default: "review/app"
+
   archive_url:
     type: string
     default: "https://for-file-transfer.s3-ap-northeast-1.amazonaws.com/dist.tar.gz"
@@ -58,12 +78,23 @@ jobs:
       - run:
           name: Deploy to S3
           command: |
-            mkdir /tmp/work
-            cd /tmp/work
+            mkdir -p /tmp/work; cd $_
             tar zxvf <(curl -sL << pipeline.parameters.archive_url >>)
             aws s3 sync --delete \
               << pipeline.parameters.public_path >> \
               s3://review-for-spa/<< pipeline.parameters.sub_domain >>
+      - run:
+          name: Post github statuses
+          command: |
+            curl -s \
+              -H "Authorization: token << pipeline.parameters.github_token >>" \
+              -X POST "https://api.github.com/repos/<< pipeline.parameters.github_username >>/<< pipeline.parameters.github_reponame >>/statuses/<< pipeline.parameters.github_sha1 >>" \
+              -d '{
+                "state": "success",
+                "target_url": "https://<< pipeline.parameters.sub_domain >>.review-for-spa.namiking.net",
+                "description": "Review App Ready",
+                "context": "<< pipeline.parameters.github_context >>" 
+              }'
 
 workflows:
 
