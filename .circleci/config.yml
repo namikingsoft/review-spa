@@ -1,5 +1,13 @@
 version: 2.1
 
+parameters:
+  create_review_app:
+    type: boolean
+    default: false
+  test_string:
+    type: string
+    default: "nonono"
+
 executors:
 
   default:
@@ -10,7 +18,6 @@ executors:
       NPM_CONFIG_LOGLEVEL: warn
       TERM: xterm-color
       TZ: /usr/share/zoneinfo/Asia/Tokyo
-
 
 commands:
 
@@ -24,8 +31,22 @@ jobs:
           name: Test
           command: echo test
 
+  create_review_app:
+    executor: default
+    steps:
+      - checkout
+      - run:
+          name: Test from pipeline
+          command: echo << pipeline.parameters.test_string >>
+
 workflows:
 
   build:
+    unless: << pipeline.parameters.create_review_app >>
     jobs:
       - terraform_plan
+
+  create_review_app_flow:
+    when: << pipeline.parameters.create_review_app >>
+    jobs:
+      - create_review_app
