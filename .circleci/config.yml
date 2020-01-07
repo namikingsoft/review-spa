@@ -26,9 +26,7 @@ commands:
     steps:
       - run:
           name: Install awscli
-          command: |
-            sudo sh -c 'curl https://bootstrap.pypa.io/get-pip.py | python'
-            sudo pip install awscli
+          command: pip install awscli
 
 jobs:
 
@@ -50,7 +48,7 @@ jobs:
       - install_awscli
       - run:
           name: Test from pipeline
-          command: echo << pipeline.parameters.test_string >>
+          command: aws s3 ls s3://review_for_spa
 
 workflows:
 
