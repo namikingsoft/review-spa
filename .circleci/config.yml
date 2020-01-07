@@ -1,6 +1,7 @@
 version: 2.1
 
 parameters:
+
   create_review_app:
     type: boolean
     default: false
@@ -10,14 +11,10 @@ parameters:
 
 executors:
 
-  default:
+  python:
     working_directory: ~/workspace
     docker:
-      - image: circleci/node:10.18.0
-    environment:
-      NPM_CONFIG_LOGLEVEL: warn
-      TERM: xterm-color
-      TZ: /usr/share/zoneinfo/Asia/Tokyo
+      - image: circleci/python:stretch
 
   terraform:
     docker:
@@ -30,8 +27,6 @@ commands:
       - run:
           name: Install awscli
           command: |
-            sudo apt-get update
-            sudo apt-get install -y python-dev groff-base
             sudo sh -c 'curl https://bootstrap.pypa.io/get-pip.py | python'
             sudo pip install awscli
 
@@ -49,7 +44,7 @@ jobs:
           command: terraform plan
 
   create_review_app:
-    executor: default
+    executor: python
     steps:
       - checkout
       - install_awscli
