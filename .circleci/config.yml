@@ -19,22 +19,37 @@ executors:
       TERM: xterm-color
       TZ: /usr/share/zoneinfo/Asia/Tokyo
 
+  terraform:
+    docker:
+      - image: hashicorp/terraform:0.12.18
+
 commands:
+
+  install_awscli:
+    steps:
+      - run:
+          name: Install awscli
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y python-dev groff-base
+            sudo sh -c 'curl https://bootstrap.pypa.io/get-pip.py | python'
+            sudo pip install awscli
 
 jobs:
 
   terraform_plan:
-    executor: default
+    executor: terraform
     steps:
       - checkout
       - run:
-          name: Test
-          command: echo test
+          name: Terraform plan
+          command: terraform plan
 
   create_review_app:
     executor: default
     steps:
       - checkout
+      - install_awscli
       - run:
           name: Test from pipeline
           command: echo << pipeline.parameters.test_string >>
