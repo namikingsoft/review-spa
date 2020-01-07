@@ -60,7 +60,7 @@ jobs:
           command: |
             mkdir /tmp/work
             cd /tmp/work
-            curl -Lo dist.tar.gz << pipeline.parameters.archive_url >>
+            tar zxvf <(curl -sL << pipeline.parameters.archive_url >>
             aws s3 sync --delete \
               << pipeline.parameters.public_path >> \
               s3://review-for-spa/<< pipeline.parameters.sub_domain >>
