@@ -43,11 +43,21 @@ module "review_for_spa_cdn" {
   aliases             = [local.review_for_spa_app_domain]
 }
 
-
 module "review_for_spa_logging" {
   source = "./modules/s3-for-logging"
 
   bucket_name = local.review_for_spa_logging_bucket_name
+}
+
+module "review_for_spa_build_trigger_api" {
+  source = "./modules/build-trigger-api"
+  providers = {
+    aws.global = aws.use1
+  }
+
+  domain                 = local.review_for_spa_api_domain
+  route53_zone_id        = data.aws_route53_zone.review_for_spa_zone.zone_id
+  function_name          = "build-trigger-api"
 }
 
 # logging
