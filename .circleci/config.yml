@@ -86,11 +86,11 @@ jobs:
       - run:
           name: Purge CloudFront
           command: |
-        echo "Invalidation cloudfront status:"
-        aws configure set preview.cloudfront true
-        aws cloudfront create-invalidation \
-          --distribution-id "$CF_DISTRIBUTION_ID" \
-          --paths "/<< pipeline.parameters.sub_domain >>/*"
+            echo "Invalidation cloudfront status:"
+            aws configure set preview.cloudfront true
+            aws cloudfront create-invalidation \
+              --distribution-id "$CF_DISTRIBUTION_ID" \
+              --paths "/<< pipeline.parameters.sub_domain >>/*"
       - run:
           name: Post github statuses
           command: |
