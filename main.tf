@@ -55,9 +55,11 @@ module "review_for_spa_build_trigger_api" {
     aws.global = aws.use1
   }
 
-  domain                 = local.review_for_spa_api_domain
-  route53_zone_id        = data.aws_route53_zone.review_for_spa_zone.zone_id
-  function_name          = "build-trigger-api"
+  domain                   = local.review_for_spa_api_domain
+  route53_zone_id          = data.aws_route53_zone.review_for_spa_zone.zone_id
+  function_name            = "build-trigger-api"
+  temp_archive_bucket_name = "review-for-spa-temp-archive"
+  circle_token             = var.circle_token
 }
 
 # logging

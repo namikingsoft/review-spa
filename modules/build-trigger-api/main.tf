@@ -4,6 +4,40 @@ data "archive_file" "lambda" {
   output_path = "/tmp/${basename(path.module)}/lambda.zip"
 }
 
+data "aws_iam_policy_document" "s3_public" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "s3:GetObject",
+    ]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
+    resources = [
+      "arn:aws:s3:::${aws_s3_bucket.temp_archive.bucket}/*",
+    ]
+  }
+}
+
+data "aws_iam_policy_document" "s3_by_lambda" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "s3:*",
+    ]
+
+    resources = [
+      "arn:aws:s3:::${aws_s3_bucket.temp_archive.bucket}",
+      "arn:aws:s3:::${aws_s3_bucket.temp_archive.bucket}/*",
+    ]
+  }
+}
+
 module "iam_role" {
   source = "../lambda-iam-role"
 
@@ -30,6 +64,17 @@ module "api_dns" {
   tag_name               = "terraform"
 }
 
+resource "aws_s3_bucket" "temp_archive" {
+  bucket = var.temp_archive_bucket_name
+
+  force_destroy = true
+}
+
+resource "aws_s3_bucket_policy" "temp_archive_policy" {
+  bucket = aws_s3_bucket.temp_archive.id
+  policy = data.aws_iam_policy_document.s3_public.json
+}
+
 resource "aws_lambda_function" "api" {
   filename         = data.archive_file.lambda.output_path
   function_name    = var.function_name
@@ -38,6 +83,14 @@ resource "aws_lambda_function" "api" {
   runtime          = "nodejs10.x"
   source_code_hash = filebase64sha256("${data.archive_file.lambda.output_path}")
   publish          = "true"
+
+  environment {
+    variables = {
+      tempArchiveBucketName = aws_s3_bucket.temp_archive.bucket
+      tempArchiveDomainName = aws_s3_bucket.temp_archive.bucket_regional_domain_name
+      circleCIPersonalToken = var.circle_token
+    }
+  }
 }
 
 resource "aws_api_gateway_rest_api" "api" {
@@ -149,6 +202,12 @@ resource "aws_lambda_permission" "api-base" {
   source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/${aws_api_gateway_deployment.api.stage_name}"
 
   depends_on    = [aws_api_gateway_rest_api.api, aws_api_gateway_resource.api]
+}
+
+resource "aws_iam_role_policy" "s3" {
+  role   = module.iam_role.id
+  name   = "${var.function_name}-s3"
+  policy = data.aws_iam_policy_document.s3_by_lambda.json
 }
 
 resource "aws_api_gateway_integration" "api" {
