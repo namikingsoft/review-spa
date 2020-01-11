@@ -48,10 +48,9 @@ const triggerCreateReviewApp = payload => new Promise((resolve, reject) => {
 
 exports.handler = async (event, context) => {
     console.log('Node version:', process.version);
-    console.log('Received event:', JSON.stringify(event));
+    // console.log('Received event:', JSON.stringify(event));
   
-    const payload = JSON.parse(event.body);
-    const { archive_base64: archiveBase64 } = payload;
+    const { archive_base64: archiveBase64, ...payload } = JSON.parse(event.body);
 
     const archiveBuffer = Buffer.from(archiveBase64, 'base64');
     const archiveFilename = `${new Date().getTime()}.tar.gz`;

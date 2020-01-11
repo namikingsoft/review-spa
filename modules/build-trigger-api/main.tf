@@ -38,6 +38,41 @@ data "aws_iam_policy_document" "s3_by_lambda" {
   }
 }
 
+data "aws_iam_policy_document" "api_gateway_assume" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "sts:AssumeRole",
+    ]
+
+    principals {
+      type        = "Service"
+      identifiers = ["apigateway.amazonaws.com"]
+    }
+  }
+}
+
+data "aws_iam_policy_document" "api_gateway" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:DescribeLogGroups",
+      "logs:DescribeLogStreams",
+      "logs:PutLogEvents",
+      "logs:GetLogEvents",
+      "logs:FilterLogEvents",
+    ]
+
+    resources = [
+      "*",
+    ]
+  }
+}
+
 module "iam_role" {
   source = "../lambda-iam-role"
 
@@ -81,6 +116,7 @@ resource "aws_lambda_function" "api" {
   role             = module.iam_role.arn
   handler          = "index.handler"
   runtime          = "nodejs10.x"
+  timeout          = 30
   source_code_hash = filebase64sha256("${data.archive_file.lambda.output_path}")
   publish          = "true"
 
@@ -142,47 +178,14 @@ resource "aws_api_gateway_account" "api" {
 resource "aws_iam_role" "api" {
   name = "api_gateway_cloudwatch_global"
 
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "",
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "apigateway.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}
-EOF
+  assume_role_policy = data.aws_iam_policy_document.api_gateway_assume.json
 }
 
 resource "aws_iam_role_policy" "api" {
   name = "default"
   role = aws_iam_role.api.id
 
-  policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "logs:CreateLogGroup",
-                "logs:CreateLogStream",
-                "logs:DescribeLogGroups",
-                "logs:DescribeLogStreams",
-                "logs:PutLogEvents",
-                "logs:GetLogEvents",
-                "logs:FilterLogEvents"
-            ],
-            "Resource": "*"
-        }
-    ]
-}
-EOF
+  policy = data.aws_iam_policy_document.api_gateway.json
 }
 
 resource "aws_lambda_permission" "api" {
