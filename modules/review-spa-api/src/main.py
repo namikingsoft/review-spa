@@ -15,17 +15,27 @@ origin_bucket = s3.Bucket(os.environ['ORIGIN_BUCKET_NAME'])
 
 cf = boto3.client('cloudfront')
 
+def json_response(status_code, dictionary):
+    return {
+        'isBase64Encoded': False,
+        'statusCode': status_code,
+        'headers': {
+            'Content-Type': 'application/json; charset=utf-8',
+        },
+        'body': json.dumps(dictionary),
+    }
+
+def error_response(status_code, message):
+    return json_response(status_code, { 'message': message })
+
 def lambda_handler(event, context):
     # print("Received event: " + json.dumps(event))
     if not (event['httpMethod'] == 'POST' and event['path'] == '/upload'):
-        return {
-            'isBase64Encoded': False,
-            'statusCode': 404,
-            'headers': {},
-            'body': 'not found'
-        }
+        return error_response(404, 'Not found')
 
     body = json.loads(event['body'])
+
+    # Authorize by GitHub
     github_repos_url = f"https://api.github.com/repos/{body['github_username']}/{body['github_reponame']}"
     github_headers = {
         'Accept': 'application/json',
@@ -34,19 +44,13 @@ def lambda_handler(event, context):
     req = urllib.request.Request(github_repos_url, headers=github_headers, method='GET')
     try:
         with urllib.request.urlopen(req) as res:
-            repo_json = res.read().decode('utf-8');
-            print(repo_json)
-            repo = json.loads(repo_json)
+            repo = json.loads(res.read().decode('utf-8'))
             if not repo['permissions']['push']:
                 raise Exception
     except:
-        return {
-            'isBase64Encoded': False,
-            'statusCode': 401,
-            'headers': {},
-            'body': 'unauthorized'
-        }
+        return error_response(401, 'Unauthorized')
 
+    # Extract dist from archive
     uuidstr = uuid.uuid4()
     archive_data = base64.b64decode(body['archive_base64'])
 
@@ -54,16 +58,19 @@ def lambda_handler(event, context):
     temp_archive_file = f"/tmp/{uuidstr}.tar.gz"
     temp_archive_dir_public = f"/tmp/{uuidstr}/{body['public_path']}"
 
-    sub_domain = f"{body['identifier']}--{body['github_reponame'].replace('.', '-')}--{body['github_username']}"
-
     with open(temp_archive_file, mode='wb') as f:
         f.write(archive_data)
 
     with tarfile.open(temp_archive_file, 'r:gz') as tf:
         tf.extractall(path=temp_archive_dir)
 
+    sub_domain = f"{body['identifier']}--{body['github_reponame'].replace('.', '-')}--{body['github_username']}"
+    review_spa_url = 'https://' + os.environ['CDN_WILDCARD_DOMAIN'].replace('*', sub_domain)
+
+    # Remove previous dist on S3
     origin_bucket.objects.filter(Prefix=f"{sub_domain}/").delete()
 
+    # Upload to S3
     for root, dirs, files in os.walk(temp_archive_dir_public):
         for filename in files:
             full_path = os.path.join(root, filename)
@@ -75,6 +82,7 @@ def lambda_handler(event, context):
             })
             print('done: ' + key_path)
 
+    # Invalidation CloudFront
     invalidation = cf.create_invalidation(
         DistributionId=os.environ['CF_DISTRIBUTION_ID'],
         InvalidationBatch={
@@ -87,10 +95,11 @@ def lambda_handler(event, context):
     )
     print(invalidation)
 
+    # Notify GitHub statuses
     github_statuses_url = f"{github_repos_url}/statuses/{body['github_sha1']}"
     github_statuses_data = {
         'state': 'success',
-        'target_url': 'https://' + os.environ['CDN_WILDCARD_DOMAIN'].replace('*', sub_domain),
+        'target_url': review_spa_url,
         'description': 'Ready for Review',
         'context': body['statuses_context']
     }
@@ -98,16 +107,6 @@ def lambda_handler(event, context):
 
     try:
         with urllib.request.urlopen(req) as res:
-            return {
-                'isBase64Encoded': False,
-                'statusCode': 200,
-                'headers': {},
-                'body': res.read().decode('utf-8')
-            }
+            return json_response(200, { 'url': review_spa_url })
     except:
-        return {
-            'isBase64Encoded': False,
-            'statusCode': 400,
-            'headers': {},
-            'body': 'failed to post github statuses'
-        }
+        return error_response(401, 'Failed to post github statuses')
