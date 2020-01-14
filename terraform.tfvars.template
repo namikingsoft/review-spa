@@ -1,4 +1,4 @@
 route53_zone_name     = "example.com."
 review_spa_app_name   = "review-spa"
-review_spa_cdn_domain = "*.review-spa.example.net"
-review_spa_api_domain = "api-review-spa.example.net"
+review_spa_cdn_domain = "*.review-spa.example.com"
+review_spa_api_domain = "api-review-spa.example.com"
