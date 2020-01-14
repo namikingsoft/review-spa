@@ -2,9 +2,10 @@ terraform {
   required_version = ">= 0.12"
 
   backend "s3" {
-    bucket = "review-spa-tfstate"
-    key    = "terraform.tfstate"
-    region = "ap-northeast-1"
+    # NOTE: input on terrform init
+    # bucket = "review-spa-tfstate"
+    # key    = "terraform.tfstate"
+    # region = "ap-northeast-1"
   }
 }
 
