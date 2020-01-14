@@ -17,6 +17,38 @@ data "aws_iam_policy_document" "s3" {
   }
 }
 
+data "archive_file" "lambda_at_edge" {
+  type        = "zip"
+  source_dir  = "${path.module}/src"
+  output_path = "/tmp/${basename(path.module)}/lambda_at_edge.zip"
+}
+
+module "iam_role" {
+  source = "../lambda-iam-role"
+
+  function_name = var.function_name
+}
+
+module "cdn_acm" {
+  source = "../acm-certificate"
+  providers = {
+    aws.global = aws.global
+  }
+
+  domain_name     = var.wildcard_domain
+  route53_zone_id = var.route53_zone_id
+}
+
+module "cdn_dns" {
+  source = "../route53-alias"
+
+  name                   = var.wildcard_domain
+  target                 = aws_cloudfront_distribution.cdn.domain_name
+  route53_zone_id        = var.route53_zone_id
+  route53_hosted_zone_id = aws_cloudfront_distribution.cdn.hosted_zone_id
+  tag_name               = "terraform"
+}
+
 resource "aws_cloudfront_origin_access_identity" "s3_origin" {
   comment = "${var.origin_bucket_name} of s3 bucket"
 }
@@ -63,14 +95,9 @@ resource "aws_cloudfront_distribution" "cdn" {
       }
     }
 
-    dynamic "lambda_function_association" {
-      for_each = var.lambda_arns
-      iterator = lambda_arn
-
-      content {
-        event_type = "viewer-request"
-        lambda_arn = lambda_arn.value
-      }
+    lambda_function_association {
+      event_type = "viewer-request"
+      lambda_arn = aws_lambda_function.urlrewrite.qualified_arn
     }
 
     viewer_protocol_policy = "redirect-to-https"
@@ -81,15 +108,7 @@ resource "aws_cloudfront_distribution" "cdn" {
 
   price_class = "PriceClass_200"
 
-  aliases = var.aliases
-
-  # for browser history 
-  # custom_error_response {
-  #   error_code            = 403
-  #   error_caching_min_ttl = 300 # default
-  #   response_code         = 200
-  #   response_page_path    = "/index.html"
-  # }
+  aliases = [var.wildcard_domain]
 
   restrictions {
     geo_restriction {
@@ -102,8 +121,20 @@ resource "aws_cloudfront_distribution" "cdn" {
   }
 
   viewer_certificate {
-    acm_certificate_arn      = var.acm_certificate_arn
+    acm_certificate_arn      = module.cdn_acm.acm_certification_arn
     ssl_support_method       = "sni-only"
     minimum_protocol_version = "TLSv1.2_2018"
   }
+}
+
+resource "aws_lambda_function" "urlrewrite" {
+  provider = aws.global
+
+  filename         = data.archive_file.lambda_at_edge.output_path
+  function_name    = var.function_name
+  role             = module.iam_role.arn
+  handler          = "urlrewrite.handler"
+  runtime          = "nodejs10.x"
+  source_code_hash = filebase64sha256("${data.archive_file.lambda_at_edge.output_path}")
+  publish          = "true"
 }

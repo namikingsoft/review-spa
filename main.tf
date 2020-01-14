@@ -1,72 +1,45 @@
-data "aws_route53_zone" "review_for_spa_zone" {
-  name = local.route53_zone_name
+data "aws_route53_zone" "review_spa_zone" {
+  name = var.route53_zone_name
 }
 
-module "urlrewrite_for_spa" {
-  source = "./modules/lambda-urlrewrite"
-  providers = {
-    aws.global = aws.use1
-  }
-
-  function_name = "${local.review_for_spa_app_name}-urlrewrite"
-}
-
-module "review_for_spa_acm" {
-  source = "./modules/acm-certificate"
-  providers = {
-    aws.global = aws.use1
-  }
-
-  domain_name     = local.review_for_spa_app_domain
-  route53_zone_id = data.aws_route53_zone.review_for_spa_zone.zone_id
-}
-
-module "review_for_spa_dns" {
-  source = "./modules/route53-alias"
-
-  name                   = local.review_for_spa_app_domain
-  target                 = module.review_for_spa_cdn.domain_name
-  route53_zone_id        = data.aws_route53_zone.review_for_spa_zone.zone_id
-  route53_hosted_zone_id = module.review_for_spa_cdn.hosted_zone_id
-  tag_name               = "terraform"
-}
-
-module "review_for_spa_cdn" {
-  source = "./modules/cloudfront-via-s3"
-
-  comment             = "Review for SPA CDN"
-  origin_bucket_name  = local.review_for_spa_app_name
-  default_ttl         = local.review_for_spa_default_ttl
-  logging_bucket_name = module.review_for_spa_logging.domain_name
-  acm_certificate_arn = module.review_for_spa_acm.acm_certification_arn
-  lambda_arns         = [module.urlrewrite_for_spa.lambda_arn]
-  aliases             = [local.review_for_spa_app_domain]
-}
-
-module "review_for_spa_logging" {
+module "review_spa_logging" {
   source = "./modules/s3-for-logging"
 
-  bucket_name = local.review_for_spa_logging_bucket_name
+  bucket_name = "${var.review_spa_app_name}-logging"
 }
 
-module "review_for_spa_build_trigger_api" {
-  source = "./modules/build-trigger-api"
+module "review_spa_logging_to_partition" {
+  source = "./modules/lambda-to-partition"
+
+  function_name = "${var.review_spa_app_name}-logging-to-partition"
+  bucket_ids    = [module.review_spa_logging.id]
+}
+
+module "review_spa_cdn" {
+  source = "./modules/review-spa-cdn"
   providers = {
     aws.global = aws.use1
   }
 
-  domain                   = local.review_for_spa_api_domain
-  route53_zone_id          = data.aws_route53_zone.review_for_spa_zone.zone_id
-  function_name            = "build-trigger-api"
-  temp_archive_bucket_name = "review-for-spa-temp-archive"
-  circle_token             = var.circle_token
+  comment             = "Review SPA CDN"
+  origin_bucket_name  = "${var.review_spa_app_name}-origin"
+  default_ttl         = local.default_ttl
+  logging_bucket_name = module.review_spa_logging.domain_name
+  wildcard_domain     = var.review_spa_cdn_domain
+  function_name       = "${var.review_spa_app_name}-urlrewrite"
+  route53_zone_id     = data.aws_route53_zone.review_spa_zone.zone_id
 }
 
-# logging
+module "review_spa_api" {
+  source = "./modules/review-spa-api"
+  providers = {
+    aws.global = aws.use1
+  }
 
-module "logging-to-partition" {
-  source = "./modules/lambda-to-partition"
-
-  function_name = local.to_partition_function_name
-  bucket_ids    = [module.review_for_spa_logging.id]
+  api_domain         = var.review_spa_api_domain
+  cdn_domain         = var.review_spa_cdn_domain
+  route53_zone_id    = data.aws_route53_zone.review_spa_zone.zone_id
+  function_name      = "${var.review_spa_app_name}-api"
+  cf_distribution_id = module.review_spa_cdn.cf_distribution_id
+  origin_bucket_name = module.review_spa_cdn.origin_bucket_name
 }

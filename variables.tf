@@ -1,6 +1,15 @@
-variable "aws_region" {
-  default = "ap-northeast-1"
+variable "route53_zone_name" {
+  description = "Route53 Zone Name (e.g. example.com.)"
 }
-variable "circle_token" {
-  description = "CircleCI Personal Token を指定"
+
+variable "review_spa_app_name" {
+  description = "App Name (e.g. review-spa)"
+}
+
+variable "review_spa_cdn_domain" {
+  description = "CDN Wildcard Domain (e.g. *.review-spa.example.com)"
+}
+
+variable "review_spa_api_domain" {
+  description = "API Domain (e.g. api-review-spa.example.com)"
 }

@@ -2,42 +2,6 @@ version: 2.1
 
 parameters:
 
-  create_review_app:
-    type: boolean
-    default: false
-
-  github_token:
-    type: string
-    default: "none"
-
-  github_username:
-    type: string
-    default: "username"
-
-  github_reponame:
-    type: string
-    default: "reponame"
-
-  github_sha1:
-    type: string
-    default: "none"
-
-  github_context:
-    type: string
-    default: "Review App"
-
-  archive_url:
-    type: string
-    default: "https://for-file-transfer.s3-ap-northeast-1.amazonaws.com/dist.tar.gz"
-
-  public_path:
-    type: string
-    default: "."
-
-  sub_domain:
-    type: string
-    default: "none"
-
 executors:
 
   python:
@@ -70,48 +34,8 @@ jobs:
           name: Terraform plan
           command: terraform plan
 
-  create_review_app:
-    executor: python
-    steps:
-      - checkout
-      - install_awscli
-      - run:
-          name: Deploy to S3
-          command: |
-            mkdir -p /tmp/work; cd $_
-            tar zxvf <(curl -sL << pipeline.parameters.archive_url >>)
-            aws s3 sync --delete \
-              << pipeline.parameters.public_path >> \
-              s3://review-for-spa/<< pipeline.parameters.sub_domain >>
-      - run:
-          name: Purge CloudFront
-          command: |
-            echo "Invalidation cloudfront status:"
-            aws configure set preview.cloudfront true
-            aws cloudfront create-invalidation \
-              --distribution-id "$CF_DISTRIBUTION_ID" \
-              --paths "/<< pipeline.parameters.sub_domain >>/*"
-      - run:
-          name: Post github statuses
-          command: |
-            curl -s \
-              -H "Authorization: token << pipeline.parameters.github_token >>" \
-              -X POST "https://api.github.com/repos/<< pipeline.parameters.github_username >>/<< pipeline.parameters.github_reponame >>/statuses/<< pipeline.parameters.github_sha1 >>" \
-              -d '{
-                "state": "success",
-                "target_url": "https://<< pipeline.parameters.sub_domain >>.review-for-spa.namiking.net",
-                "description": "Ready for Review",
-                "context": "<< pipeline.parameters.github_context >>" 
-              }'
-
 workflows:
 
   build:
-    unless: << pipeline.parameters.create_review_app >>
     jobs:
       - terraform_plan
-
-  create_review_app_flow:
-    when: << pipeline.parameters.create_review_app >>
-    jobs:
-      - create_review_app

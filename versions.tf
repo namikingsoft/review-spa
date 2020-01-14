@@ -2,14 +2,14 @@ terraform {
   required_version = ">= 0.12"
 
   backend "s3" {
-    bucket = "review-for-spa-tfstate"
+    bucket = "review-spa-tfstate"
     key    = "terraform.tfstate"
     region = "ap-northeast-1"
   }
 }
 
 provider "aws" {
-  version = "~> 2.13.0"
+  version = "~> 2.44.0"
 }
 
 provider "aws" {
@@ -19,5 +19,5 @@ provider "aws" {
 }
 
 provider "archive" {
-  version = "~> 1.2.2"
+  version = "~> 1.3.0"
 }
