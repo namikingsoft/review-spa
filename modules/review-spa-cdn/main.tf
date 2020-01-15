@@ -19,8 +19,8 @@ data "aws_iam_policy_document" "s3" {
 
 data "archive_file" "lambda_at_edge" {
   type        = "zip"
-  source_dir  = "${path.module}/src"
-  output_path = "/tmp/${basename(path.module)}/lambda_at_edge.zip"
+  source_dir  = "${path.module}/lambda"
+  output_path = "/tmp/${basename(path.module)}/lambda.zip"
 }
 
 module "iam_role" {
