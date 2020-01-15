@@ -96,17 +96,19 @@ def lambda_handler(event, context):
     print(invalidation)
 
     # Notify GitHub statuses
-    github_statuses_url = f"{github_repos_url}/statuses/{body['github_sha1']}"
-    github_statuses_data = {
-        'state': 'success',
-        'target_url': review_spa_url,
-        'description': 'Ready for Review',
-        'context': body['statuses_context']
-    }
-    req = urllib.request.Request(github_statuses_url, json.dumps(github_statuses_data).encode(), github_headers, method='POST')
+    if 'github_sha1' in body:
+        github_statuses_url = f"{github_repos_url}/statuses/{body['github_sha1']}"
+        github_statuses_data = {
+            'state': 'success',
+            'target_url': review_spa_url,
+            'description': 'Ready for Review',
+            'context': body['statuses_context'] if 'statuses_context' in body else 'Review App',
+        }
+        req = urllib.request.Request(github_statuses_url, json.dumps(github_statuses_data).encode(), github_headers, method='POST')
 
-    try:
-        with urllib.request.urlopen(req) as res:
-            return json_response(200, { 'url': review_spa_url })
-    except:
-        return error_response(401, 'Failed to post github statuses')
+        try:
+            urllib.request.urlopen(req)
+        except:
+            return error_response(401, 'Failed to post github statuses')
+
+    return json_response(200, { 'url': review_spa_url })
