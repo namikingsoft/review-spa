@@ -57,7 +57,7 @@ resource "aws_s3_bucket" "origin" {
   bucket = var.origin_bucket_name
 
   versioning {
-    enabled = true
+    enabled = false
   }
 
   force_destroy = true
