@@ -30,7 +30,7 @@ exports.handler = async (event, context) => {
       throw new Error('Not log file');
     }
 
-    // S3 copyObject API で Hive 形式ディレクトリにコピー
+    // Hive 形式ディレクトリにコピー
     const prefix = key.includes('/') ? `${path.dirname(key)}/` : '';
     const basename = path.basename(key);
     const copyKeyPath = `${prefix}dt=${matches[1]}/${basename}`;
@@ -39,8 +39,13 @@ exports.handler = async (event, context) => {
       CopySource: `${bucket}/${key}`,
       Key: copyKeyPath,
     };
-    console.log('Copy to partition:', JSON.stringify(params));
-    return s3.copyObject(params).promise();
+    console.log('Move to partition:', JSON.stringify(params));
+    await s3.copyObject(params).promise();
+
+    // コピー元のファイルを削除
+    return s3.deleteObject({ Bucket: bucket, Key: key }).promise();
+
+
   });
 
   await Promise.all(s3Promises);
