@@ -49,6 +49,19 @@ module "cdn_dns" {
   tag_name               = "terraform"
 }
 
+module "logging_bucket" {
+  source = "../s3-for-logging"
+
+  bucket_name = "${var.resource_name_prefix}-logging"
+}
+
+module "logging_to_partition" {
+  source = "../lambda-to-partition"
+
+  bucket_ids    = [module.logging_bucket.id]
+  function_name = "${var.resource_name_prefix}-logging-to-partition"
+}
+
 resource "aws_cloudfront_origin_access_identity" "s3_origin" {
   comment = "${aws_s3_bucket.origin.bucket} of s3 bucket"
 }
@@ -117,7 +130,7 @@ resource "aws_cloudfront_distribution" "cdn" {
   }
 
   logging_config {
-    bucket = var.logging_bucket_name
+    bucket = module.logging_bucket.domain_name
   }
 
   viewer_certificate {

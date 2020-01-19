@@ -2,19 +2,6 @@ data "aws_route53_zone" "review_spa_zone" {
   name = var.route53_zone_name
 }
 
-module "review_spa_logging" {
-  source = "./modules/s3-for-logging"
-
-  bucket_name = "${var.resource_name_prefix}-logging"
-}
-
-module "review_spa_logging_to_partition" {
-  source = "./modules/lambda-to-partition"
-
-  bucket_ids    = [module.review_spa_logging.id]
-  function_name = "${var.resource_name_prefix}-logging-to-partition"
-}
-
 module "review_spa_cdn" {
   source = "./modules/review-spa-cdn"
   providers = {
@@ -23,7 +10,6 @@ module "review_spa_cdn" {
 
   comment              = "Review SPA CDN"
   default_ttl          = local.default_ttl
-  logging_bucket_name  = module.review_spa_logging.domain_name
   wildcard_domain      = var.review_spa_cdn_domain
   route53_zone_id      = data.aws_route53_zone.review_spa_zone.zone_id
   resource_name_prefix = "${var.resource_name_prefix}-cdn"

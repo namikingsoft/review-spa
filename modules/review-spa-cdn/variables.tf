@@ -6,10 +6,6 @@ variable "default_ttl" {
   description = "Default TTL (e.g. 604800)"
 }
 
-variable "logging_bucket_name" {
-  description = "ログアーカイブ先の S3 バケット (e.g. review-spa-logging)"
-}
-
 variable "wildcard_domain" {
   description = "ワイルドカードのドメイン名 (e.g. *.review-spa.example.io)"
 }
