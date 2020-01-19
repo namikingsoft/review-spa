@@ -1,3 +1,3 @@
-variable "function_name" {
-  description = "Lambda の関数名 (e.g. copy-to-partition-for-athena)"
+variable "role_name" {
+  description = "作成する IAM Role 名 (e.g. lambda-iam-role)"
 }

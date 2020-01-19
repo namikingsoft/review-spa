@@ -1,7 +1,3 @@
-variable "function_name" {
-  description = "Lambda の関数名 (e.g. build-trigger-api)"
-}
-
 variable "cf_distribution_id" {
   description = "Cloudfront Distirbution ID (e.g. E2NGxxxxxxLIIR)"
 }
@@ -20,4 +16,8 @@ variable "cdn_domain" {
 
 variable "route53_zone_id" {
   description = "Route 53 の zone id (e.g. Z2LJA307ZAVHPI)"
+}
+
+variable "resource_name_prefix" {
+  description = "Resource Name Prefix required unique on AWS (e.g. review-spa-api)"
 }

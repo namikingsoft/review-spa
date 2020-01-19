@@ -27,16 +27,16 @@ data "aws_s3_bucket" "loggings" {
   bucket = var.bucket_ids[count.index]
 }
 
-module "iam_role" {
+module "lambda_iam_role" {
   source = "../lambda-iam-role"
 
-  function_name = var.function_name
+  role_name = var.function_name
 }
 
 resource "aws_lambda_function" "to_partition" {
   filename         = data.archive_file.lambda.output_path
   function_name    = var.function_name
-  role             = module.iam_role.arn
+  role             = module.lambda_iam_role.arn
   handler          = "index.handler"
   runtime          = "nodejs10.x"
   source_code_hash = filebase64sha256("${data.archive_file.lambda.output_path}")
@@ -67,7 +67,7 @@ resource "aws_lambda_permission" "allow_bucket" {
 resource "aws_iam_role_policy" "s3" {
   count = length(var.bucket_ids)
 
-  role   = module.iam_role.id
+  role   = module.lambda_iam_role.id
   name   = "${var.function_name}-s3-${var.bucket_ids[count.index]}"
   policy = data.aws_iam_policy_document.s3[count.index].json
 }

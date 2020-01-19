@@ -7,7 +7,7 @@ data "aws_iam_policy_document" "s3" {
     ]
 
     resources = [
-      "arn:aws:s3:::${var.origin_bucket_name}/*"
+      "arn:aws:s3:::${aws_s3_bucket.origin.bucket}/*"
     ]
 
     principals {
@@ -23,10 +23,10 @@ data "archive_file" "lambda_at_edge" {
   output_path = "/tmp/${basename(path.module)}/lambda.zip"
 }
 
-module "iam_role" {
+module "lambda_iam_role" {
   source = "../lambda-iam-role"
 
-  function_name = var.function_name
+  role_name = "${var.resource_name_prefix}-lambda"
 }
 
 module "cdn_acm" {
@@ -50,11 +50,11 @@ module "cdn_dns" {
 }
 
 resource "aws_cloudfront_origin_access_identity" "s3_origin" {
-  comment = "${var.origin_bucket_name} of s3 bucket"
+  comment = "${aws_s3_bucket.origin.bucket} of s3 bucket"
 }
 
 resource "aws_s3_bucket" "origin" {
-  bucket = var.origin_bucket_name
+  bucket = "${var.resource_name_prefix}-origin"
 
   versioning {
     enabled = false
@@ -131,8 +131,8 @@ resource "aws_lambda_function" "urlrewrite" {
   provider = aws.global
 
   filename         = data.archive_file.lambda_at_edge.output_path
-  function_name    = var.function_name
-  role             = module.iam_role.arn
+  function_name    = "${var.resource_name_prefix}-urlrewrite"
+  role             = module.lambda_iam_role.arn
   handler          = "urlrewrite.handler"
   runtime          = "nodejs10.x"
   source_code_hash = filebase64sha256("${data.archive_file.lambda_at_edge.output_path}")

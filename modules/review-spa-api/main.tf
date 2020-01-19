@@ -86,10 +86,10 @@ data "aws_iam_policy_document" "api_gateway" {
   }
 }
 
-module "iam_role" {
+module "lambda_iam_role" {
   source = "../lambda-iam-role"
 
-  function_name = var.function_name
+  role_name = "${var.resource_name_prefix}-lambda"
 }
 
 module "api_acm" {
@@ -114,8 +114,8 @@ module "api_dns" {
 
 resource "aws_lambda_function" "api" {
   filename         = data.archive_file.lambda.output_path
-  function_name    = var.function_name
-  role             = module.iam_role.arn
+  function_name    = "${var.resource_name_prefix}-api"
+  role             = module.lambda_iam_role.arn
   handler          = "api.lambda_handler"
   runtime          = "python3.8"
   timeout          = 30
@@ -133,8 +133,8 @@ resource "aws_lambda_function" "api" {
 
 resource "aws_lambda_function" "job" {
   filename         = data.archive_file.lambda.output_path
-  function_name    = "${var.function_name}-job"
-  role             = module.iam_role.arn
+  function_name    = "${var.resource_name_prefix}-job"
+  role             = module.lambda_iam_role.arn
   handler          = "job.lambda_handler"
   runtime          = "python3.8"
   timeout          = 30
@@ -230,8 +230,8 @@ resource "aws_lambda_permission" "api-base" {
 }
 
 resource "aws_iam_role_policy" "lambda" {
-  role   = module.iam_role.id
-  name   = "${var.function_name}-policy"
+  role   = module.lambda_iam_role.id
+  name   = "${var.resource_name_prefix}-lambda-policy"
   policy = data.aws_iam_policy_document.lambda_policy.json
 }
 
@@ -251,7 +251,7 @@ resource "aws_api_gateway_base_path_mapping" "api" {
 }
 
 resource "aws_dynamodb_table" "temp_archive" {
-  name           = "${var.function_name}-temp-archive"
+  name           = "${var.resource_name_prefix}-archive"
   read_capacity  = 1
   write_capacity = 1
   hash_key       = "Key"
@@ -268,7 +268,7 @@ resource "aws_dynamodb_table" "temp_archive" {
 }
 
 resource "aws_s3_bucket" "temp_archive" {
-  bucket = "${var.function_name}-temp-archive"
+  bucket = "${var.resource_name_prefix}-archive"
 
   versioning {
     enabled = false
@@ -294,7 +294,7 @@ resource "aws_s3_bucket_notification" "temp_archive" {
   }
 }
 
-resource "aws_lambda_permission" "allow_bucket" {
+resource "aws_lambda_permission" "temp_archive" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.job.arn
   principal     = "s3.amazonaws.com"

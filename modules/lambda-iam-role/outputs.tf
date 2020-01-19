@@ -1,7 +1,7 @@
 output "id" {
-  value = aws_iam_role.lambda.id
+  value = aws_iam_role.role.id
 }
 
 output "arn" {
-  value = aws_iam_role.lambda.arn
+  value = aws_iam_role.role.arn
 }

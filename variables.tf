@@ -2,8 +2,8 @@ variable "route53_zone_name" {
   description = "Route53 Zone Name (e.g. example.com.)"
 }
 
-variable "review_spa_app_name" {
-  description = "App Name (e.g. review-spa)"
+variable "resource_name_prefix" {
+  description = "Resource Name Prefix required unique on AWS (e.g. review-spa)"
 }
 
 variable "review_spa_cdn_domain" {

@@ -24,13 +24,13 @@ data "aws_iam_policy_document" "logs" {
   }
 }
 
-resource "aws_iam_role" "lambda" {
-  name               = "${var.function_name}-role"
+resource "aws_iam_role" "role" {
+  name               = var.role_name
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
 resource "aws_iam_role_policy" "logs" {
-  role   = aws_iam_role.lambda.id
-  name   = "${var.function_name}-logs"
+  name   = "logs"
+  role   = aws_iam_role.role.id
   policy = data.aws_iam_policy_document.logs.json
 }
