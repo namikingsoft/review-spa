@@ -15,6 +15,8 @@ data "aws_iam_policy_document" "lambda_policy" {
     resources = [
       "arn:aws:s3:::${var.origin_bucket_name}",
       "arn:aws:s3:::${var.origin_bucket_name}/*",
+      "arn:aws:s3:::${aws_s3_bucket.temp_archive.bucket}",
+      "arn:aws:s3:::${aws_s3_bucket.temp_archive.bucket}/*",
     ]
   }
   statement {
@@ -32,7 +34,19 @@ data "aws_iam_policy_document" "lambda_policy" {
     ]
 
     resources = [
+      # TODO: filter distribution
       "*",
+    ]
+  }
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "dynamodb:*"
+    ]
+
+    resources = [
+      aws_dynamodb_table.temp_archive.arn,
     ]
   }
 }
@@ -102,7 +116,7 @@ resource "aws_lambda_function" "api" {
   filename         = data.archive_file.lambda.output_path
   function_name    = var.function_name
   role             = module.iam_role.arn
-  handler          = "main.lambda_handler"
+  handler          = "api.lambda_handler"
   runtime          = "python3.8"
   timeout          = 30
   source_code_hash = filebase64sha256("${data.archive_file.lambda.output_path}")
@@ -110,9 +124,29 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      ORIGIN_BUCKET_NAME  = var.origin_bucket_name
-      CF_DISTRIBUTION_ID  = var.cf_distribution_id
-      CDN_WILDCARD_DOMAIN = var.cdn_domain
+      CDN_WILDCARD_DOMAIN      = var.cdn_domain
+      TEMP_ARCHIVE_BUCKET_NAME = aws_s3_bucket.temp_archive.bucket
+      TEMP_ARCHIVE_TABLE_NAME  = aws_dynamodb_table.temp_archive.name
+    }
+  }
+}
+
+resource "aws_lambda_function" "job" {
+  filename         = data.archive_file.lambda.output_path
+  function_name    = "${var.function_name}-job"
+  role             = module.iam_role.arn
+  handler          = "job.lambda_handler"
+  runtime          = "python3.8"
+  timeout          = 30
+  source_code_hash = filebase64sha256("${data.archive_file.lambda.output_path}")
+  publish          = "true"
+
+  environment {
+    variables = {
+      ORIGIN_BUCKET_NAME       = var.origin_bucket_name
+      CF_DISTRIBUTION_ID       = var.cf_distribution_id
+      TEMP_ARCHIVE_BUCKET_NAME = aws_s3_bucket.temp_archive.bucket
+      TEMP_ARCHIVE_TABLE_NAME  = aws_dynamodb_table.temp_archive.name
     }
   }
 }
@@ -214,4 +248,55 @@ resource "aws_api_gateway_base_path_mapping" "api" {
   api_id      = aws_api_gateway_rest_api.api.id
   stage_name  = aws_api_gateway_deployment.api.stage_name
   domain_name = aws_api_gateway_domain_name.api.domain_name
+}
+
+resource "aws_dynamodb_table" "temp_archive" {
+  name           = "${var.function_name}-temp-archive"
+  read_capacity  = 1
+  write_capacity = 1
+  hash_key       = "Key"
+
+  attribute {
+    name = "Key"
+    type = "S"
+  }
+
+  ttl {
+    attribute_name = "TimeToExist"
+    enabled        = true
+  }
+}
+
+resource "aws_s3_bucket" "temp_archive" {
+  bucket = "${var.function_name}-temp-archive"
+
+  versioning {
+    enabled = false
+  }
+
+  lifecycle_rule {
+    enabled = true
+
+    expiration {
+      days = 1
+    }
+  }
+
+  force_destroy = true
+}
+
+resource "aws_s3_bucket_notification" "temp_archive" {
+  bucket = aws_s3_bucket.temp_archive.bucket
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.job.arn
+    events              = ["s3:ObjectCreated:Put"]
+  }
+}
+
+resource "aws_lambda_permission" "allow_bucket" {
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.job.arn
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.temp_archive.arn
 }
