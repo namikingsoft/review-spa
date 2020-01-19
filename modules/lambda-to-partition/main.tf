@@ -38,7 +38,7 @@ resource "aws_lambda_function" "to_partition" {
   function_name    = var.function_name
   role             = module.lambda_iam_role.arn
   handler          = "index.handler"
-  runtime          = "nodejs10.x"
+  runtime          = "nodejs12.x"
   source_code_hash = filebase64sha256("${data.archive_file.lambda.output_path}")
   publish          = "true"
 }
