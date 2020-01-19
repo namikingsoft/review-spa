@@ -112,11 +112,11 @@ module "api_dns" {
   tag_name               = "terraform"
 }
 
-resource "aws_lambda_function" "api" {
+resource "aws_lambda_function" "entry" {
   filename         = data.archive_file.lambda.output_path
-  function_name    = "${var.resource_name_prefix}-api"
+  function_name    = "${var.resource_name_prefix}-entry"
   role             = module.lambda_iam_role.arn
-  handler          = "api.lambda_handler"
+  handler          = "entry.lambda_handler"
   runtime          = "python3.8"
   timeout          = 30
   source_code_hash = filebase64sha256("${data.archive_file.lambda.output_path}")
@@ -131,11 +131,11 @@ resource "aws_lambda_function" "api" {
   }
 }
 
-resource "aws_lambda_function" "job" {
+resource "aws_lambda_function" "deploy" {
   filename         = data.archive_file.lambda.output_path
-  function_name    = "${var.resource_name_prefix}-job"
+  function_name    = "${var.resource_name_prefix}-deploy"
   role             = module.lambda_iam_role.arn
-  handler          = "job.lambda_handler"
+  handler          = "deploy.lambda_handler"
   runtime          = "python3.8"
   timeout          = 30
   source_code_hash = filebase64sha256("${data.archive_file.lambda.output_path}")
@@ -198,7 +198,7 @@ resource "aws_api_gateway_account" "api" {
 }
 
 resource "aws_iam_role" "api" {
-  name = "api_gateway_cloudwatch_global"
+  name =  "${var.resource_name_prefix}-api-gateway"
 
   assume_role_policy = data.aws_iam_policy_document.api_gateway_assume.json
 }
@@ -211,7 +211,7 @@ resource "aws_iam_role_policy" "api" {
 }
 
 resource "aws_lambda_permission" "api" {
-  function_name = aws_lambda_function.api.function_name
+  function_name = aws_lambda_function.entry.function_name
   statement_id  = "AllowExecutionFromApiGateway"
   action        = "lambda:InvokeFunction"
   principal     = "apigateway.amazonaws.com"
@@ -220,18 +220,17 @@ resource "aws_lambda_permission" "api" {
 }
 
 resource "aws_lambda_permission" "api-base" {
-  function_name = aws_lambda_function.api.function_name
+  function_name = aws_lambda_function.entry.function_name
   statement_id  = "AllowExecutionFromApiGatewayBase"
   action        = "lambda:InvokeFunction"
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.api.execution_arn}/${aws_api_gateway_deployment.api.stage_name}"
-
   depends_on    = [aws_api_gateway_rest_api.api, aws_api_gateway_resource.api]
 }
 
 resource "aws_iam_role_policy" "lambda" {
-  role   = module.lambda_iam_role.id
   name   = "${var.resource_name_prefix}-lambda-policy"
+  role   = module.lambda_iam_role.id
   policy = data.aws_iam_policy_document.lambda_policy.json
 }
 
@@ -241,7 +240,7 @@ resource "aws_api_gateway_integration" "api" {
   http_method             = aws_api_gateway_method.api.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.api.invoke_arn
+  uri                     = aws_lambda_function.entry.invoke_arn
 }
 
 resource "aws_api_gateway_base_path_mapping" "api" {
@@ -289,14 +288,14 @@ resource "aws_s3_bucket_notification" "temp_archive" {
   bucket = aws_s3_bucket.temp_archive.bucket
 
   lambda_function {
-    lambda_function_arn = aws_lambda_function.job.arn
+    lambda_function_arn = aws_lambda_function.deploy.arn
     events              = ["s3:ObjectCreated:Put"]
   }
 }
 
 resource "aws_lambda_permission" "temp_archive" {
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.job.arn
+  function_name = aws_lambda_function.deploy.arn
   principal     = "s3.amazonaws.com"
   source_arn    = aws_s3_bucket.temp_archive.arn
 }

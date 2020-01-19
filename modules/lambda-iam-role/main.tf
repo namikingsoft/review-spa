@@ -30,7 +30,7 @@ resource "aws_iam_role" "role" {
 }
 
 resource "aws_iam_role_policy" "logs" {
-  name   = "logs"
+  name   = "default"
   role   = aws_iam_role.role.id
   policy = data.aws_iam_policy_document.logs.json
 }
