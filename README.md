@@ -1,6 +1,6 @@
 # Simple Review App for SPA on AWS CDN
 
-## Get Started
+## Getting Started
 
 ```bash
 # Edit terraform.tfvars
@@ -22,6 +22,17 @@ terraform plan
 
 # Apply
 terraform apply
+```
+
+## Choose workspace for develop
+
+```bash
+# New
+terraform new staging
+
+# Switch
+terraform select default
+terraform select staging
 ```
 
 ## Create Review App Example
