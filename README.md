@@ -24,7 +24,7 @@ terraform plan
 terraform apply
 ```
 
-## Choose workspace for develop
+Choose workspace for develop
 
 ```bash
 # New
