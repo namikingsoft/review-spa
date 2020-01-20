@@ -1,4 +1,19 @@
-route53_zone_name     = "example.com."
-resource_name_prefix  = "review-spa"
-review_spa_cdn_domain = "*.review-spa.example.com"
-review_spa_api_domain = "api-review-spa.example.com"
+route53_zone_name = {
+  default : "example.com."
+  staging : "example.com."
+}
+
+resource_name_prefix = {
+  default : "review-spa"
+  staging : "review-spa-stg"
+}
+
+review_spa_cdn_domain = {
+  default : "*.review-spa.example.com"
+  staging : "*.review-spa-stg.example.com"
+}
+
+review_spa_api_domain = {
+  default : "api-review-spa.example.com"
+  staging : "api-review-spa-stg.example.com"
+}

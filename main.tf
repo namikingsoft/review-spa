@@ -1,5 +1,5 @@
 data "aws_route53_zone" "review_spa_zone" {
-  name = var.route53_zone_name
+  name = local.route53_zone_name
 }
 
 module "review_spa_cdn" {
@@ -10,9 +10,9 @@ module "review_spa_cdn" {
 
   comment              = "Review SPA CDN"
   default_ttl          = local.default_ttl
-  wildcard_domain      = var.review_spa_cdn_domain
+  wildcard_domain      = local.review_spa_cdn_domain
   route53_zone_id      = data.aws_route53_zone.review_spa_zone.zone_id
-  resource_name_prefix = "${var.resource_name_prefix}-cdn"
+  resource_name_prefix = "${local.resource_name_prefix}-cdn"
 }
 
 module "review_spa_api" {
@@ -21,10 +21,10 @@ module "review_spa_api" {
     aws.global = aws.use1
   }
 
-  api_domain           = var.review_spa_api_domain
-  cdn_domain           = var.review_spa_cdn_domain
+  api_domain           = local.review_spa_api_domain
+  cdn_domain           = local.review_spa_cdn_domain
   route53_zone_id      = data.aws_route53_zone.review_spa_zone.zone_id
   cf_distribution_id   = module.review_spa_cdn.cf_distribution_id
   origin_bucket_name   = module.review_spa_cdn.origin_bucket_name
-  resource_name_prefix = "${var.resource_name_prefix}-api"
+  resource_name_prefix = "${local.resource_name_prefix}-api"
 }
