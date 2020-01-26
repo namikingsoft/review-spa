@@ -9,7 +9,6 @@ module "review_spa_cdn" {
   }
 
   comment              = "Review SPA CDN"
-  default_ttl          = local.default_ttl
   wildcard_domain      = local.review_spa_cdn_domain
   route53_zone_id      = data.aws_route53_zone.review_spa_zone.zone_id
   resource_name_prefix = "${local.resource_name_prefix}-cdn"

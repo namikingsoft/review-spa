@@ -114,9 +114,9 @@ resource "aws_cloudfront_distribution" "cdn" {
     }
 
     viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = var.default_ttl
-    max_ttl                = 31536000
+    min_ttl                = local.cache_ttl
+    default_ttl            = local.cache_ttl
+    max_ttl                = local.cache_ttl
   }
 
   price_class = "PriceClass_200"

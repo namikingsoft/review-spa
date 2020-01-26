@@ -2,10 +2,6 @@ variable "comment" {
   description = "AWS コンソールに表示されるメモ (e.g. 何でも良い)"
 }
 
-variable "default_ttl" {
-  description = "Default TTL (e.g. 604800)"
-}
-
 variable "wildcard_domain" {
   description = "ワイルドカードのドメイン名 (e.g. *.review-spa.example.io)"
 }
