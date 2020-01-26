@@ -14,6 +14,11 @@ variable "cdn_domain" {
   description = "CDN ドメイン (e.g. *.api.example.com)"
 }
 
+variable "cdn_settings_json_filename" {
+  description = "CDN Settings JSON Filename on put origin (e.g. .review-spa.json)"
+  default     = ".review-spa.json"
+}
+
 variable "route53_zone_id" {
   description = "Route 53 の zone id (e.g. Z2LJA307ZAVHPI)"
 }

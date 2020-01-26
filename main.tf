@@ -25,10 +25,11 @@ module "review_spa_api" {
     aws.global = aws.use1
   }
 
-  api_domain           = local.api_domain
-  cdn_domain           = local.cdn_domain
-  route53_zone_id      = data.aws_route53_zone.review_spa_zone.zone_id
-  cf_distribution_id   = module.review_spa_cdn.cf_distribution_id
-  origin_bucket_name   = module.review_spa_cdn.origin_bucket_name
-  resource_name_prefix = "${local.resource_name_prefix}-api"
+  api_domain                 = local.api_domain
+  cdn_domain                 = local.cdn_domain
+  cdn_settings_json_filename = local.cdn_settings_json_filename
+  route53_zone_id            = data.aws_route53_zone.review_spa_zone.zone_id
+  cf_distribution_id         = module.review_spa_cdn.cf_distribution_id
+  origin_bucket_name         = module.review_spa_cdn.origin_bucket_name
+  resource_name_prefix       = "${local.resource_name_prefix}-api"
 }

@@ -143,10 +143,11 @@ resource "aws_lambda_function" "deploy" {
 
   environment {
     variables = {
-      ORIGIN_BUCKET_NAME       = var.origin_bucket_name
-      CF_DISTRIBUTION_ID       = var.cf_distribution_id
-      TEMP_ARCHIVE_BUCKET_NAME = aws_s3_bucket.temp_archive.bucket
-      TEMP_ARCHIVE_TABLE_NAME  = aws_dynamodb_table.temp_archive.name
+      ORIGIN_BUCKET_NAME         = var.origin_bucket_name
+      CF_DISTRIBUTION_ID         = var.cf_distribution_id
+      CDN_SETTINGS_JSON_FILENAME = var.cdn_settings_json_filename
+      TEMP_ARCHIVE_BUCKET_NAME   = aws_s3_bucket.temp_archive.bucket
+      TEMP_ARCHIVE_TABLE_NAME    = aws_dynamodb_table.temp_archive.name
     }
   }
 }

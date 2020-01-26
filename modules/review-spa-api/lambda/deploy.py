@@ -34,6 +34,7 @@ def lambda_handler(event, context):
     public_path = param['public_path']
     sub_domain = param['sub_domain']
     review_spa_url = param['review_spa_url']
+    use_github_oauth = param['use_github_oauth']
 
     # Extract dist from archive
     temp_archive_dir = f"/tmp/{key}"
@@ -41,8 +42,16 @@ def lambda_handler(event, context):
     temp_archive_dir_public = f"/tmp/{key}/{public_path}"
 
     temp_archive_bucket.download_file(key, temp_archive_file)
-    with tarfile.open(temp_archive_file, 'r:gz') as tf:
-        tf.extractall(path=temp_archive_dir)
+    with tarfile.open(temp_archive_file, 'r:gz') as f:
+        f.extractall(path=temp_archive_dir)
+
+    # Write settings json
+    if use_github_oauth is not None:
+        settings = {
+            'useGitHubOAuth': use_github_oauth,
+        }
+        with open(f"{temp_archive_dir_public}/{os.environ['CDN_SETTINGS_JSON_FILENAME']}", 'w') as f:
+            json.dump(settings, f)
 
     # Clear temp archive
     temp_archive_table.delete_item(Key={ 'Key': key })

@@ -64,10 +64,11 @@ def lambda_handler(event, context):
                 'github_username': body['github_username'],
                 'github_reponame': body['github_reponame'],
                 'github_sha1': body['github_sha1'] if 'github_sha1' in body else None,
-                'statuses_context': body['statuses_context']if 'statuses_context' in body else None,
+                'statuses_context': body['statuses_context'] if 'statuses_context' in body else None,
                 'public_path': body['public_path'],
                 'sub_domain': sub_domain,
                 'review_spa_url': review_spa_url,
+                'use_github_oauth': body['use_github_oauth'] if 'use_github_oauth' in body else None,
             }),
             'TimeToExist': int(time.time()) + (60 * 3), 
         }
