@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import uuid
 import json
@@ -14,7 +15,6 @@ temp_archive_bucket = s3_resource.Bucket(os.environ['TEMP_ARCHIVE_BUCKET_NAME'])
 
 dynamodb = boto3.resource('dynamodb')
 temp_archive_table = dynamodb.Table(os.environ['TEMP_ARCHIVE_TABLE_NAME'])
-
 
 def json_response(status_code, dictionary):
     return {
@@ -53,7 +53,8 @@ def lambda_handler(event, context):
 
     # Upload temp archive
     uuidstr = str(uuid.uuid4())
-    sub_domain = f"{body['identifier']}--{body['github_reponame'].replace('.', '-')}--{body['github_username']}"
+    identifier = re.sub('-+', '-', body['identifier'])
+    sub_domain = f"{identifier}--{body['github_reponame'].replace('.', '-')}--{body['github_username']}"
     review_spa_url = 'https://' + os.environ['CDN_WILDCARD_DOMAIN'].replace('*', sub_domain)
     temp_archive_table.put_item(
         Item={
