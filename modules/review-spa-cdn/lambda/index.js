@@ -3,7 +3,7 @@ console.log('Loading function');
 const path = require('path');
 const aws = require('aws-sdk');
 
-const createFernetLike = require('./fernetlike');
+const createFernetLike = require('./fernetLike');
 const jsonRequest = require('./jsonRequest');
 const env = require('./.env.json');
 
