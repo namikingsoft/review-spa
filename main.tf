@@ -8,10 +8,14 @@ module "review_spa_cdn" {
     aws.global = aws.use1
   }
 
-  comment              = "Review SPA CDN"
-  wildcard_domain      = local.review_spa_cdn_domain
-  route53_zone_id      = data.aws_route53_zone.review_spa_zone.zone_id
-  resource_name_prefix = "${local.resource_name_prefix}-cdn"
+  comment                    = "Review SPA CDN"
+  wildcard_domain            = local.review_spa_cdn_domain
+  cdn_token_name             = local.review_spa_cdn_token_name
+  cdn_token_max_age          = local.review_spa_cdn_token_max_age
+  github_oauth_client_id     = local.github_oauth_client_id
+  github_oauth_client_secret = local.github_oauth_client_secret
+  route53_zone_id            = data.aws_route53_zone.review_spa_zone.zone_id
+  resource_name_prefix       = "${local.resource_name_prefix}-cdn"
 }
 
 module "review_spa_api" {

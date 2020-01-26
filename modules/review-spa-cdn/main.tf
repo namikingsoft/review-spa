@@ -151,3 +151,50 @@ resource "aws_lambda_function" "urlrewrite" {
   source_code_hash = filebase64sha256("${data.archive_file.lambda_at_edge.output_path}")
   publish          = "true"
 }
+
+resource "local_file" "env_json" {
+  content     = jsonencode({
+    "s3OriginBucketName"      = aws_s3_bucket.origin.bucket
+    "cdnTokenName"            = var.cdn_token_name
+    "cdnTokenMaxAge"          = var.cdn_token_max_age
+    "githubOAuthClientId"     = var.github_oauth_client_id
+    "githubOAuthClientSecret" = var.github_oauth_client_secret
+    "signerKey"               = random_string.signer_key.result
+    "cryptoKey"               = random_string.crypto_key.result
+    "salt"                    = random_string.salt.result
+  })
+  filename = "${path.module}/lambda/.env.json"
+}
+
+resource "random_string" "crypto_key" {
+  length = 16
+}
+
+resource "random_string" "signer_key" {
+  length = 16
+}
+
+resource "random_string" "salt" {
+  length = 32
+}
+
+data "aws_iam_policy_document" "lambda_policy" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "s3:*",
+    ]
+
+    resources = [
+      "arn:aws:s3:::${aws_s3_bucket.origin.bucket}",
+      "arn:aws:s3:::${aws_s3_bucket.origin.bucket}/*",
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "lambda" {
+  name   = "${var.resource_name_prefix}-lambda-policy"
+  role   = module.lambda_iam_role.id
+  policy = data.aws_iam_policy_document.lambda_policy.json
+}
