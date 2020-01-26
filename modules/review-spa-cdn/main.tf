@@ -140,6 +140,7 @@ resource "local_file" "env_json" {
     "s3OriginBucketName"      = aws_s3_bucket.origin.bucket
     "cdnTokenName"            = var.cdn_token_name
     "cdnTokenMaxAge"          = var.cdn_token_max_age
+    "cdnSettingsJsonFilename" = var.cdn_settings_json_filename
     "githubOAuthClientId"     = var.github_oauth_client_id
     "githubOAuthClientSecret" = var.github_oauth_client_secret
     "signerKey"               = random_string.signer_key.result

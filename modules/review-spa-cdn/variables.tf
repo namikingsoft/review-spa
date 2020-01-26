@@ -16,6 +16,11 @@ variable "cdn_token_max_age" {
   default     = 86400
 }
 
+variable "cdn_settings_json_filename" {
+  description = "CDN Settings JSON Filename on put origin (e.g. .review-spa.json)"
+  default     = ".review-spa.json"
+}
+
 variable "github_oauth_client_id" {
   description = "GitHub OAuth Client ID"
   default     = null

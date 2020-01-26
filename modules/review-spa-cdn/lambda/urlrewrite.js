@@ -13,6 +13,7 @@ const {
     s3OriginBucketName,
     cdnTokenName,
     cdnTokenMaxAge,
+    cdnSettingsJsonFilename,
     githubOAuthClientId,
     githubOAuthClientSecret,
     signerKey,
@@ -38,7 +39,7 @@ const parseSubdomain = subdomain => {
 
 const loadSettings = async subdomain => {
     try {
-        const settingKey = `${subdomain}/review-spa.json`;
+        const settingKey = `${subdomain}/${cdnSettingsJsonFilename}`;
         const data = await s3.getObject({ Bucket: s3OriginBucketName, Key: settingKey }).promise();
         return JSON.parse(String(data.Body));
     } catch (err) {

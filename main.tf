@@ -9,9 +9,10 @@ module "review_spa_cdn" {
   }
 
   comment                    = "Review SPA CDN"
-  wildcard_domain            = local.review_spa_cdn_domain
-  cdn_token_name             = local.review_spa_cdn_token_name
-  cdn_token_max_age          = local.review_spa_cdn_token_max_age
+  wildcard_domain            = local.cdn_domain
+  cdn_token_name             = local.cdn_token_name
+  cdn_token_max_age          = local.cdn_token_max_age
+  cdn_settings_json_filename = local.cdn_settings_json_filename
   github_oauth_client_id     = local.github_oauth_client_id
   github_oauth_client_secret = local.github_oauth_client_secret
   route53_zone_id            = data.aws_route53_zone.review_spa_zone.zone_id
@@ -24,8 +25,8 @@ module "review_spa_api" {
     aws.global = aws.use1
   }
 
-  api_domain           = local.review_spa_api_domain
-  cdn_domain           = local.review_spa_cdn_domain
+  api_domain           = local.api_domain
+  cdn_domain           = local.cdn_domain
   route53_zone_id      = data.aws_route53_zone.review_spa_zone.zone_id
   cf_distribution_id   = module.review_spa_cdn.cf_distribution_id
   origin_bucket_name   = module.review_spa_cdn.origin_bucket_name

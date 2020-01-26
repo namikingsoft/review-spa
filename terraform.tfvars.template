@@ -8,24 +8,14 @@ resource_name_prefix = {
   staging : "review-spa-stg"
 }
 
-review_spa_api_domain = {
+api_domain = {
   default : "api-review-spa.example.com"
   staging : "api-review-spa-stg.example.com"
 }
 
-review_spa_cdn_domain = {
+cdn_domain = {
   default : "*.review-spa.example.com"
   staging : "*.review-spa-stg.example.com"
-}
-
-review_spa_cdn_token_name = {
-  default : "x-review-spa-token"
-  staging : "x-review-spa-token"
-}
-
-review_spa_cdn_token_max_age = {
-  default : 86400
-  staging : 86400
 }
 
 github_oauth_client_id = {
@@ -36,4 +26,19 @@ github_oauth_client_id = {
 github_oauth_client_secret = {
   default : null
   staging : null
+}
+
+cdn_token_name = {
+  default : "x-review-spa-token"
+  staging : "x-review-spa-token"
+}
+
+cdn_token_max_age = {
+  default : 86400
+  staging : 86400
+}
+
+cdn_settings_json_filename = {
+  default : ".review-spa.json"
+  staging : ".review-spa.json"
 }
