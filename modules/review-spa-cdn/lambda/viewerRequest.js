@@ -4,7 +4,7 @@ const path = require('path');
 const aws = require('aws-sdk');
 
 const createFernetLike = require('./fernetLike');
-const jsonRequest = require('./jsonRequest');
+const jsonFetch = require('./jsonFetch');
 const env = require('./.env.json');
 
 console.log('Environments:', JSON.stringify(env));
@@ -71,7 +71,7 @@ exports.handler = async (event, context) => {
       const { subdomain, redirectUri, settings } = JSON.parse(verify(state));
       const { username, reponame } = parseSubdomain(subdomain);
       const { access_token: githubAccessToken } = JSON.parse(
-        await jsonRequest({
+        await jsonFetch({
           method: 'POST',
           url: 'https://github.com/login/oauth/access_token',
           body: JSON.stringify({
@@ -83,7 +83,7 @@ exports.handler = async (event, context) => {
         }),
       );
       const deployments = JSON.parse(
-        await jsonRequest({
+        await jsonFetch({
           url: `https://api.github.com/repos/${username}/${reponame}/deployments`,
           headers: {
             'Authorization': `token ${githubAccessToken}`,

@@ -129,7 +129,7 @@ resource "aws_lambda_function" "urlrewrite" {
   filename         = data.archive_file.lambda_at_edge.output_path
   function_name    = "${var.resource_name_prefix}-urlrewrite"
   role             = module.lambda_iam_role.arn
-  handler          = "index.handler"
+  handler          = "viewerRequest.handler"
   runtime          = "nodejs10.x"
   source_code_hash = filebase64sha256("${data.archive_file.lambda_at_edge.output_path}")
   publish          = "true"

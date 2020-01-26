@@ -1,6 +1,6 @@
 const https = require("https");
 
-const jsonRequest = ({ url, body, method = 'GET', headers: overwriteHeaders }) => new Promise((resolve, reject) => {
+const jsonFetch = ({ url, body, method = 'GET', headers: overwriteHeaders }) => new Promise((resolve, reject) => {
   const headers = {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
@@ -23,4 +23,4 @@ const jsonRequest = ({ url, body, method = 'GET', headers: overwriteHeaders }) =
   req.end();
 });
 
-module.exports = jsonRequest;
+module.exports = jsonFetch;
