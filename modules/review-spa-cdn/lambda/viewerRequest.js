@@ -11,6 +11,7 @@ console.log('Environments:', JSON.stringify(env));
 
 const {
   s3OriginBucketName,
+  wildcardDomain,
   cdnTokenName,
   cdnTokenMaxAge,
   cdnSettingsJsonFilename,
@@ -29,14 +30,6 @@ const parseQueryString = querystring => querystring
   .map(x => x.split('='))
   .reduce((acc, [key, val]) => ({ ...acc, [key]: decodeURIComponent(val) }), {});
 
-const parseSubdomain = subdomain => {
-  const xs = subdomain.split('--');
-  const identifier = xs.shift();
-  const username = xs.pop();
-  const reponame = xs.join('--');
-  return { identifier, username, reponame };
-};
-
 const loadSettings = async subdomain => {
   try {
     const settingKey = `${subdomain}/${cdnSettingsJsonFilename}`;
@@ -53,7 +46,7 @@ exports.handler = async (event, context) => {
 
   const { Records: [{ cf: { request } }] } = event;
   const { headers: { host: [{ value: host }], cookie: cookieHeaders }, querystring } = request;
-  const [, subdomain] = host.match(/^([^\.]+)\./);
+  const [subdomain] = host.split('.');
   const originalUrl = `https://${host}${request.uri}`;
 
   // Parse cookie headers
@@ -68,8 +61,8 @@ exports.handler = async (event, context) => {
   if (subdomain === 'auth') {
     try {
       const { code, state } = parseQueryString(querystring);
-      const { subdomain, redirectUri, settings } = JSON.parse(verify(state));
-      const { username, reponame } = parseSubdomain(subdomain);
+      const { redirectUri, settings } = JSON.parse(verify(state));
+      const { username, reponame } = settings;
       const { access_token: githubAccessToken } = JSON.parse(
         await jsonFetch({
           method: 'POST',
@@ -155,7 +148,7 @@ exports.handler = async (event, context) => {
   const { useGitHubOAuth } = settings;
   if (useGitHubOAuth) {
     const stateMaxAge = 3600; // 1 hour
-    const state = sign(JSON.stringify({ subdomain, redirectUri: originalUrl, settings }), stateMaxAge);
+    const state = sign(JSON.stringify({ redirectUri: originalUrl, settings }), stateMaxAge);
     return {
       status: '302',
       statusDescription: 'Found',

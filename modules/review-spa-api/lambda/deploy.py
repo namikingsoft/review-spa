@@ -46,12 +46,13 @@ def lambda_handler(event, context):
         f.extractall(path=temp_archive_dir)
 
     # Write settings json
-    if use_github_oauth is not None:
-        settings = {
-            'useGitHubOAuth': use_github_oauth,
-        }
-        with open(f"{temp_archive_dir_public}/{os.environ['CDN_SETTINGS_JSON_FILENAME']}", 'w') as f:
-            json.dump(settings, f)
+    settings = {
+        'username': github_username,
+        'reponame': github_reponame,
+        'useGitHubOAuth': use_github_oauth,
+    }
+    with open(f"{temp_archive_dir_public}/{os.environ['CDN_SETTINGS_JSON_FILENAME']}", 'w') as f:
+        json.dump(settings, f)
 
     # Clear temp archive
     temp_archive_table.delete_item(Key={ 'Key': key })

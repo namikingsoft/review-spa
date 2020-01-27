@@ -43,18 +43,21 @@ def lambda_handler(event, context):
         'Authorization': f"token {body['github_token']}",
     }
     req = urllib.request.Request(github_repos_url, headers=github_headers, method='GET')
+    repo_id = None
     try:
         with urllib.request.urlopen(req) as res:
             repo = json.loads(res.read().decode('utf-8'))
             if not repo['permissions']['push']:
                 raise Exception
+            repo_id = hex(repo['id'])[2:] # strip 0x
     except:
         return error_response(401, 'Unauthorized')
 
     # Upload temp archive
     uuidstr = str(uuid.uuid4())
-    identifier = re.sub('-+', '-', body['identifier'])
-    sub_domain = f"{identifier}--{body['github_reponame'].replace('.', '-')}--{body['github_username']}"
+    identifier = re.sub('[^a-zA-Z0-9]', '-', body['identifier'])
+    identifier = re.sub('-+', '-', identifier)
+    sub_domain = f"{identifier}--{repo_id}"
     review_spa_url = 'https://' + os.environ['CDN_WILDCARD_DOMAIN'].replace('*', sub_domain)
     temp_archive_table.put_item(
         Item={
@@ -68,7 +71,7 @@ def lambda_handler(event, context):
                 'public_path': body['public_path'],
                 'sub_domain': sub_domain,
                 'review_spa_url': review_spa_url,
-                'use_github_oauth': body['use_github_oauth'] if 'use_github_oauth' in body else None,
+                'use_github_oauth': body['use_github_oauth'] if 'use_github_oauth' in body else False,
             }),
             'TimeToExist': int(time.time()) + (60 * 3), 
         }

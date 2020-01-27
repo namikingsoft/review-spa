@@ -138,6 +138,7 @@ resource "aws_lambda_function" "urlrewrite" {
 resource "local_file" "env_json" {
   content     = jsonencode({
     "s3OriginBucketName"      = aws_s3_bucket.origin.bucket
+    "wildcardDomain"          = var.wildcard_domain
     "cdnTokenName"            = var.cdn_token_name
     "cdnTokenMaxAge"          = var.cdn_token_max_age
     "cdnSettingsJsonFilename" = var.cdn_settings_json_filename
