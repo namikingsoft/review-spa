@@ -97,7 +97,7 @@ resource "aws_cloudfront_distribution" "cdn" {
 
     lambda_function_association {
       event_type = "viewer-request"
-      lambda_arn = aws_lambda_function.urlrewrite.qualified_arn
+      lambda_arn = aws_lambda_function.viewer_request.qualified_arn
     }
 
     viewer_protocol_policy = "redirect-to-https"
@@ -123,11 +123,11 @@ resource "aws_cloudfront_distribution" "cdn" {
   }
 }
 
-resource "aws_lambda_function" "urlrewrite" {
+resource "aws_lambda_function" "viewer_request" {
   provider = aws.global
 
   filename         = data.archive_file.lambda_at_edge.output_path
-  function_name    = "${var.resource_name_prefix}-urlrewrite"
+  function_name    = "${var.resource_name_prefix}-viewer-request"
   role             = module.lambda_iam_role.arn
   handler          = "viewerRequest.handler"
   runtime          = "nodejs10.x"
