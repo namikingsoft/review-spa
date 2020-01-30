@@ -137,7 +137,7 @@ resource "aws_lambda_function" "deploy" {
   role             = module.lambda_iam_role.arn
   handler          = "deploy.lambda_handler"
   runtime          = "python3.8"
-  timeout          = 30
+  timeout          = 300 # 5 minutes
   source_code_hash = filebase64sha256("${data.archive_file.lambda.output_path}")
   publish          = "true"
 
@@ -199,7 +199,7 @@ resource "aws_api_gateway_account" "api" {
 }
 
 resource "aws_iam_role" "api" {
-  name =  "${var.resource_name_prefix}-api-gateway"
+  name = "${var.resource_name_prefix}-api-gateway"
 
   assume_role_policy = data.aws_iam_policy_document.api_gateway_assume.json
 }
