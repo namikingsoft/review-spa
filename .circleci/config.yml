@@ -4,38 +4,25 @@ parameters:
 
 executors:
 
-  python:
+  node:
     working_directory: ~/workspace
     docker:
-      - image: circleci/python:stretch
-
-  terraform:
-    docker:
-      - image: hashicorp/terraform:0.12.18
+      - image: circleci/node:10.18.0
 
 commands:
 
-  install_awscli:
-    steps:
-      - run:
-          name: Install awscli
-          command: sudo pip install awscli
-
 jobs:
 
-  terraform_plan:
-    executor: terraform
+  test:
+    executor: node
     steps:
       - checkout
       - run:
-          name: Terraform init
-          command: terraform init
-      - run:
-          name: Terraform plan
-          command: terraform plan
+          name: Test
+          command: npx jest --config {}
 
 workflows:
 
   build:
     jobs:
-      - terraform_plan
+      - test
