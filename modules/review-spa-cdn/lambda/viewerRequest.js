@@ -25,6 +25,9 @@ const {
 const s3 = new aws.S3({ apiVersion: '2006-03-01' });
 const { sign, verify } = createFernetLike({ signerKey, cryptoKey, salt });
 
+// TODO: environment
+const authSubdomain = 'auth';
+
 const parseQueryString = querystring => querystring
   .split('&')
   .map(x => x.split('='))
@@ -82,7 +85,7 @@ exports.handler = async (event, context) => {
     : {};
   console.log('Cookie:', JSON.stringify(cookie));
 
-  if (subdomain === 'auth') {
+  if (subdomain === authSubdomain) {
     try {
       const { code, state } = parseQueryString(querystring);
       const { redirectUri, settings } = JSON.parse(verify(state));
