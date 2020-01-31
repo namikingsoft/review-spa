@@ -75,7 +75,7 @@ export GITHUB_TOKEN="your_github_access_token_have_repo_permissions"
 (
   curl -XPOST https://api-review-spa.example.com/upload -d @- \
     | jq -r .upload_archive_url \
-    | xargs curl -DL - -X PUT --upload-file dist.tar.gz
+    | xargs curl -vL -X PUT --upload-file dist.tar.gz
 ) << EOS
 {
   "github_token": "${GITHUB_TOKEN}",
