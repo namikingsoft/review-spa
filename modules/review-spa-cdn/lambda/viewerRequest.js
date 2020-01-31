@@ -40,6 +40,30 @@ const loadSettings = async subdomain => {
   }
 };
 
+const responseOf302Found = ({
+  redirectUrl,
+  cookie: {
+    name,
+    value = '',
+    maxAge = 0,
+  } = {},
+}) => ({
+  status: '302',
+  statusDescription: 'Found',
+  headers: {
+    location: [{
+      key: 'Location',
+      value: redirectUrl,
+    }],
+    ...(name ? {
+      'set-cookie': [{
+        key: 'Set-Cookie',
+        value: `${name}=${value}; path=/; Max-Age=${maxAge}; SameSite=Lax; Secure; HttpOnly`,
+      }],
+    } : {}),
+  },
+});
+
 exports.handler = async (event, context) => {
   console.log('Node version:', process.version);
   console.log('Received event:', JSON.stringify(event));
@@ -88,16 +112,9 @@ exports.handler = async (event, context) => {
         throw new Error('Unauthorize repository');
       }
       const cdnToken = sign(JSON.stringify({ settings }), cdnTokenMaxAge);
-      return {
-        status: '302',
-        statusDescription: 'Found',
-        headers: {
-          location: [{
-            key: 'Location',
-            value: `${redirectUri}?${cdnTokenName}=${encodeURIComponent(cdnToken)}`,
-          }],
-        },
-      };
+      return responseOf302Found({
+        redirectUrl: `${redirectUri}?${cdnTokenName}=${encodeURIComponent(cdnToken)}`,
+      });
     } catch (err) {
       console.log('Unauthorized:', err.stack || err);
       return {
@@ -125,20 +142,14 @@ exports.handler = async (event, context) => {
     const { [cdnTokenName]: cdnToken } = parseQueryString(querystring);
     if (cdnToken) {
       console.log('Set auth token to cookie:', cdnToken)
-      return {
-        status: '302',
-        statusDescription: 'Found',
-        headers: {
-          location: [{
-            key: 'Location',
-            value: originalUrl,
-          }],
-          'set-cookie': [{
-            key: 'Set-Cookie',
-            value: `${cdnTokenName}=${cdnToken}; path=/; Max-Age=${cdnTokenMaxAge}; SameSite=Lax; Secure; HttpOnly`,
-          }],
+      return responseOf302Found({
+        redirectUrl: originalUrl,
+        cookie: {
+          name: cdnTokenName,
+          value: cdnToken,
+          maxAge: cdnTokenMaxAge,
         },
-      };
+      });
     }
   }
 
@@ -149,35 +160,19 @@ exports.handler = async (event, context) => {
   if (useGitHubOAuth) {
     const stateMaxAge = 3600; // 1 hour
     const state = sign(JSON.stringify({ redirectUri: originalUrl, settings }), stateMaxAge);
-    return {
-      status: '302',
-      statusDescription: 'Found',
-      headers: {
-        location: [{
-          key: 'Location',
-          value: `https://github.com/login/oauth/authorize?client_id=${githubOAuthClientId}&scope=repo_deployment&state=${state}`,
-        }],
-        'set-cookie': [{
-          key: 'Set-Cookie',
-          value: `${cdnTokenName}=; path=/; Max-Age=0; SameSite=Lax; Secure; HttpOnly`,
-        }],
-      },
-    };
+    return responseOf302Found({
+      redirectUrl: `https://github.com/login/oauth/authorize?client_id=${githubOAuthClientId}&scope=repo_deployment&state=${state}`,
+      cookie: { name: cdnTokenName },
+    });
   }
 
   const cdnToken = sign(JSON.stringify({ settings }), cdnTokenMaxAge);
-  return {
-    status: '302',
-    statusDescription: 'Found',
-    headers: {
-      location: [{
-        key: 'Location',
-        value: originalUrl,
-      }],
-      'set-cookie': [{
-        key: 'Set-Cookie',
-        value: `${cdnTokenName}=${cdnToken}; path=/; Max-Age=${cdnTokenMaxAge}; SameSite=Lax; Secure; HttpOnly`,
-      }],
+  return responseOf302Found({
+    redirectUrl: originalUrl,
+    cookie: {
+      name: cdnTokenName,
+      value: cdnToken,
+      maxAge: cdnTokenMaxAge,
     },
-  };
+  });
 }
