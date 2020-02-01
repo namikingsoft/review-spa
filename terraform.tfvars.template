@@ -39,6 +39,6 @@ cdn_token_max_age = {
 }
 
 cdn_settings_json_filename = {
-  default : ".review-spa.json"
-  staging : ".review-spa.json"
+  default : ".review-spa-json"
+  staging : ".review-spa-json"
 }
