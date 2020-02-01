@@ -21,6 +21,8 @@ data "archive_file" "lambda_at_edge" {
   type        = "zip"
   source_dir  = "${path.module}/lambda"
   output_path = "/tmp/${basename(path.module)}/lambda.zip"
+
+  depends_on = [local_file.env_json]
 }
 
 module "lambda_iam_role" {
