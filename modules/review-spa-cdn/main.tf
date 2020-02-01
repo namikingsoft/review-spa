@@ -150,7 +150,8 @@ resource "local_file" "env_json" {
     "cryptoKey"               = random_string.crypto_key.result
     "salt"                    = random_string.salt.result
   })
-  filename = "${path.module}/lambda/.env.json"
+  filename        = "${path.module}/lambda/.env.json"
+  file_permission = "0644"
 }
 
 resource "random_string" "crypto_key" {
