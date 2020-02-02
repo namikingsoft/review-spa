@@ -19,10 +19,41 @@ data "aws_iam_policy_document" "s3" {
 
 data "archive_file" "lambda_at_edge" {
   type        = "zip"
-  source_dir  = "${path.module}/lambda"
   output_path = "/tmp/${basename(path.module)}/lambda.zip"
 
-  depends_on = [local_file.env_json]
+  # TODO: use source_dir after resolve local_file resource rendered .env.json
+  # source_dir  = "${path.module}/lambda"
+  source {
+    filename = "viewerRequest.js"
+    content  = file("${path.module}/lambda/viewerRequest.js")
+  }
+  source {
+    filename = "jsonFetch.js"
+    content  = file("${path.module}/lambda/jsonFetch.js")
+  }
+  source {
+    filename = "fernetLike.js"
+    content  = file("${path.module}/lambda/fernetLike.js")
+  }
+  source {
+    filename = "responseEvent.js"
+    content  = file("${path.module}/lambda/responseEvent.js")
+  }
+  source {
+    filename = ".env.json"
+    content  = jsonencode({
+      "s3OriginBucketName"      = aws_s3_bucket.origin.bucket
+      "wildcardDomain"          = var.wildcard_domain
+      "cdnTokenName"            = var.cdn_token_name
+      "cdnTokenMaxAge"          = var.cdn_token_max_age
+      "cdnSettingsJsonFilename" = var.cdn_settings_json_filename
+      "githubOAuthClientId"     = var.github_oauth_client_id
+      "githubOAuthClientSecret" = var.github_oauth_client_secret
+      "signerKey"               = random_string.signer_key.result
+      "cryptoKey"               = random_string.crypto_key.result
+      "salt"                    = random_string.salt.result
+    })
+  }
 }
 
 module "lambda_iam_role" {
@@ -135,23 +166,6 @@ resource "aws_lambda_function" "viewer_request" {
   runtime          = "nodejs10.x"
   source_code_hash = filebase64sha256("${data.archive_file.lambda_at_edge.output_path}")
   publish          = "true"
-}
-
-resource "local_file" "env_json" {
-  content     = jsonencode({
-    "s3OriginBucketName"      = aws_s3_bucket.origin.bucket
-    "wildcardDomain"          = var.wildcard_domain
-    "cdnTokenName"            = var.cdn_token_name
-    "cdnTokenMaxAge"          = var.cdn_token_max_age
-    "cdnSettingsJsonFilename" = var.cdn_settings_json_filename
-    "githubOAuthClientId"     = var.github_oauth_client_id
-    "githubOAuthClientSecret" = var.github_oauth_client_secret
-    "signerKey"               = random_string.signer_key.result
-    "cryptoKey"               = random_string.crypto_key.result
-    "salt"                    = random_string.salt.result
-  })
-  filename        = "${path.module}/lambda/.env.json"
-  file_permission = "0644"
 }
 
 resource "random_string" "crypto_key" {
