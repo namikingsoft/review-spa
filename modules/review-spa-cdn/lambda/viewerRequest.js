@@ -5,8 +5,9 @@ const aws = require('aws-sdk');
 
 const createFernetLike = require('./fernetLike');
 const jsonFetch = require('./jsonFetch');
-const env = require('./.env.json');
+const { responseOf302Found, responseOf401Unauthorized } = require('./responseEvent');
 
+const env = require('./.env.json');
 console.log('Environments:', JSON.stringify(env));
 
 const {
@@ -42,30 +43,6 @@ const loadSettings = async subdomain => {
     return { useGitHubOAuth: false };
   }
 };
-
-const responseOf302Found = ({
-  redirectUrl,
-  cookie: {
-    name,
-    value = '',
-    maxAge = 0,
-  } = {},
-}) => ({
-  status: '302',
-  statusDescription: 'Found',
-  headers: {
-    location: [{
-      key: 'Location',
-      value: redirectUrl,
-    }],
-    ...(name ? {
-      'set-cookie': [{
-        key: 'Set-Cookie',
-        value: `${name}=${value}; path=/; Max-Age=${maxAge}; SameSite=Lax; Secure; HttpOnly`,
-      }],
-    } : {}),
-  },
-});
 
 exports.handler = async (event, context) => {
   console.log('Node version:', process.version);
@@ -120,11 +97,7 @@ exports.handler = async (event, context) => {
       });
     } catch (err) {
       console.log('Unauthorized:', err.stack || err);
-      return {
-        status: '401',
-        statusDescription: 'Unauthorized',
-        body: '401 Unauthorized',
-      };
+      return responseOf401Unauthorized();
     }
   }
 
@@ -147,7 +120,7 @@ exports.handler = async (event, context) => {
       console.log('Set auth token to cookie:', cdnToken)
       return responseOf302Found({
         redirectUrl: originalUrl,
-        cookie: {
+        setCookie: {
           name: cdnTokenName,
           value: cdnToken,
           maxAge: cdnTokenMaxAge,
@@ -165,14 +138,14 @@ exports.handler = async (event, context) => {
     const state = sign(JSON.stringify({ redirectUri: originalUrl, settings }), stateMaxAge);
     return responseOf302Found({
       redirectUrl: `https://github.com/login/oauth/authorize?client_id=${githubOAuthClientId}&scope=repo_deployment&state=${state}`,
-      cookie: { name: cdnTokenName },
+      setCookie: { name: cdnTokenName },
     });
   }
 
   const cdnToken = sign(JSON.stringify({ settings }), cdnTokenMaxAge);
   return responseOf302Found({
     redirectUrl: originalUrl,
-    cookie: {
+    setCookie: {
       name: cdnTokenName,
       value: cdnToken,
       maxAge: cdnTokenMaxAge,
