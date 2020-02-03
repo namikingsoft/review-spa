@@ -3,33 +3,34 @@ const createFernetLike = require('./fernetLike');
 const signerKey = '16bytesaaaaaaaaa';
 const cryptoKey = '16bytesbbbbbbbbb';
 const iv = Buffer.from('16bytesccccccccc');
+const unixtime = 1580000000 * 1000;
 
 test('sign', () => {
-  const { sign } = createFernetLike({ signerKey, cryptoKey, randomBytes: () => iv, getCurrentDate: () => new Date(1000) });
+  const { sign } = createFernetLike({ signerKey, cryptoKey, randomBytes: () => iv, getCurrentDate: () => new Date(unixtime) });
   const token = sign('I want to encrypt this string.', 60);
 
-  expect(token).toBe('1-61-MTZieXRlc2NjY2NjY2NjYw==-d+7GOFT9EyCqnKQOQghiczXQAZY29RvdJyi+5gnmR3U=-E+7laPplIOhNh0sd7QwyvQ95LOr6hepvIlQPYS8yTSQ=');
+  expect(token).toBe('1-5e2ce33c-MTZieXRlc2NjY2NjY2NjYw==-d+7GOFT9EyCqnKQOQghiczXQAZY29RvdJyi+5gnmR3U=-22v7OypcYx0N9kS3WQ6wI0X1Y73JDOOn3DXIUldU/j8=');
 });
 
 test('verify ok', () => {
-  const { verify } = createFernetLike({ signerKey, cryptoKey, randomBytes: () => iv, getCurrentDate: () => new Date(1000) });
-  const payload = verify('1-61-MTZieXRlc2NjY2NjY2NjYw==-d+7GOFT9EyCqnKQOQghiczXQAZY29RvdJyi+5gnmR3U=-E+7laPplIOhNh0sd7QwyvQ95LOr6hepvIlQPYS8yTSQ=');
+  const { verify } = createFernetLike({ signerKey, cryptoKey, randomBytes: () => iv, getCurrentDate: () => new Date(unixtime) });
+  const payload = verify('1-5e2ce33c-MTZieXRlc2NjY2NjY2NjYw==-d+7GOFT9EyCqnKQOQghiczXQAZY29RvdJyi+5gnmR3U=-22v7OypcYx0N9kS3WQ6wI0X1Y73JDOOn3DXIUldU/j8=');
 
   expect(payload).toBe('I want to encrypt this string.');
 });
 
 test('verify failure', () => {
-  const { verify } = createFernetLike({ signerKey, cryptoKey, randomBytes: () => iv, getCurrentDate: () => new Date(1000) });
+  const { verify } = createFernetLike({ signerKey, cryptoKey, randomBytes: () => iv, getCurrentDate: () => new Date(unixtime) });
 
   expect(
-    () => verify('1-99-MTZieXRlc2NjY2NjY2NjYw==-d+7GOFT9EyCqnKQOQghiczXQAZY29RvdJyi+5gnmR3U=-E+7laPplIOhNh0sd7QwyvQ95LOr6hepvIlQPYS8yTSQ='),
+    () => verify('1-ffffffff-MTZieXRlc2NjY2NjY2NjYw==-d+7GOFT9EyCqnKQOQghiczXQAZY29RvdJyi+5gnmR3U=-22v7OypcYx0N9kS3WQ6wI0X1Y73JDOOn3DXIUldU/j8='),
   ).toThrow('Verification failure');
 });
 
 test('verify expired', () => {
-  const { verify } = createFernetLike({ signerKey, cryptoKey, randomBytes: () => iv, getCurrentDate: () => new Date(1000 + 61 * 1000) });
+  const { verify } = createFernetLike({ signerKey, cryptoKey, randomBytes: () => iv, getCurrentDate: () => new Date(unixtime + 61 * 1000) });
 
   expect(
-    () => verify('1-61-MTZieXRlc2NjY2NjY2NjYw==-d+7GOFT9EyCqnKQOQghiczXQAZY29RvdJyi+5gnmR3U=-E+7laPplIOhNh0sd7QwyvQ95LOr6hepvIlQPYS8yTSQ='),
+    () => verify('1-5e2ce33c-MTZieXRlc2NjY2NjY2NjYw==-d+7GOFT9EyCqnKQOQghiczXQAZY29RvdJyi+5gnmR3U=-22v7OypcYx0N9kS3WQ6wI0X1Y73JDOOn3DXIUldU/j8='),
   ).toThrow('Expired token');
 });

@@ -9,6 +9,7 @@ const cryptoAlgorism = 'aes-128-cbc';
 const signerAlgorism = 'sha256';
 const encodeTo = 'base64';
 const decodeTo = 'utf-8';
+const expiredBaseNum = 16;
 
 const encrypt = (payload, key, iv) => {
   const cipher = crypto.createCipheriv(cryptoAlgorism, key, iv);
@@ -36,17 +37,19 @@ const createFernetLike = ({
   return {
     sign(payload, maxAgeSec) {
       const iv = randomBytes();
-      const ivBase64 = iv.toString('base64');
+      const ivBase64 = iv.toString(encodeTo);
       const crypted = encrypt(payload, cryptoKey, iv);
-      const expired = String(Math.floor(getCurrentDate().getTime() / 1000) + maxAgeSec);
+      const expired = (Math.floor(getCurrentDate().getTime() / 1000) + maxAgeSec).toString(expiredBaseNum);
       const signature = hmac(version + expired + ivBase64 + crypted);
       return [version, expired, ivBase64, crypted, signature].join(separator);
     },
     verify(token) {
       const [header, expired, ivBase64, crypted, signature] = token.split(separator);
-      if (Number(expired) * 1000 < getCurrentDate().getTime()) throw new Error('Expired token');
+      if (parseInt(expired, expiredBaseNum) * 1000 < getCurrentDate().getTime()) {
+        throw new Error('Expired token');
+      }
       if (signature === hmac(header + expired + ivBase64 + crypted)) {
-        return decrypt(crypted, cryptoKey, Buffer.from(ivBase64, 'base64'));
+        return decrypt(crypted, cryptoKey, Buffer.from(ivBase64, encodeTo));
       }
       throw new Error('Verification failure');
     },
