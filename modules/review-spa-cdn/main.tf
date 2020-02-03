@@ -51,7 +51,6 @@ data "archive_file" "lambda_at_edge" {
       "githubOAuthClientSecret" = var.github_oauth_client_secret
       "signerKey"               = random_string.signer_key.result
       "cryptoKey"               = random_string.crypto_key.result
-      "salt"                    = random_string.salt.result
     })
   }
 }
@@ -174,10 +173,6 @@ resource "random_string" "crypto_key" {
 
 resource "random_string" "signer_key" {
   length = 16
-}
-
-resource "random_string" "salt" {
-  length = 32
 }
 
 data "aws_iam_policy_document" "lambda_policy" {

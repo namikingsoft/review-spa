@@ -20,11 +20,10 @@ const {
   githubOAuthClientSecret,
   signerKey,
   cryptoKey,
-  salt,
 } = env;
 
 const s3 = new aws.S3({ apiVersion: '2006-03-01' });
-const { sign, verify } = createFernetLike({ signerKey, cryptoKey, salt });
+const { sign, verify } = createFernetLike({ signerKey, cryptoKey });
 
 // TODO: environment
 const authSubdomain = 'auth';
