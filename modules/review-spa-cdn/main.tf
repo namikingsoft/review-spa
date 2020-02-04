@@ -41,7 +41,7 @@ data "archive_file" "lambda_at_edge" {
   }
   source {
     filename = ".env.json"
-    content  = jsonencode({
+    content = jsonencode({
       "s3OriginBucketName"      = aws_s3_bucket.origin.bucket
       "wildcardDomain"          = var.wildcard_domain
       "cdnTokenName"            = var.cdn_token_name
@@ -120,7 +120,7 @@ resource "aws_cloudfront_distribution" "cdn" {
     compress         = true
 
     forwarded_values {
-      query_string = true
+      query_string = false
 
       cookies {
         forward = "none"
