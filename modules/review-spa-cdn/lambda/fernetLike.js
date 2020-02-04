@@ -10,6 +10,7 @@ const signerAlgorism = 'sha256';
 const encodeTo = 'base64';
 const decodeTo = 'utf-8';
 const expiredBaseNum = 16;
+const ivBytesNum = 16;
 
 const encrypt = (payload, key, iv) => {
   const cipher = crypto.createCipheriv(cryptoAlgorism, key, iv);
@@ -30,7 +31,7 @@ const createHmac = key => payload => crypto
 const createFernetLike = ({
   signerKey,
   cryptoKey,
-  randomBytes = () => crypto.randomBytes(16),
+  randomBytes = () => crypto.randomBytes(ivBytesNum),
   getCurrentDate = () => new Date(),
 }) => {
   const hmac = createHmac(signerKey);
