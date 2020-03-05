@@ -50,7 +50,7 @@ exports.handler = async (event, context) => {
   const { Records: [{ cf: { request } }] } = event;
   const { headers: { host: [{ value: host }], cookie: cookieHeaders }, querystring } = request;
   const [subdomain] = host.split('.');
-  const originalUrl = `https://${host}${request.uri}`;
+  const originalUrl = `https://${host}${request.uri}${querystring && `?${querystring}`}`;
 
   // Parse cookie headers
   const cookie = cookieHeaders ? cookieHeaders
@@ -91,8 +91,9 @@ exports.handler = async (event, context) => {
         throw new Error('Unauthorize repository');
       }
       const cdnToken = sign(JSON.stringify({ settings }), cdnTokenMaxAge);
+      const conjunction = redirectUri.includes('?') ? '&' : '?';
       return responseOf302Found({
-        redirectUrl: `${redirectUri}?${cdnTokenName}=${encodeURIComponent(cdnToken)}`,
+        redirectUrl: `${redirectUri}${conjunction}${cdnTokenName}=${encodeURIComponent(cdnToken)}`,
       });
     } catch (err) {
       console.log('Unauthorized:', err.stack || err);
