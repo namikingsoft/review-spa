@@ -8,6 +8,8 @@ import tarfile
 import mimetypes
 import urllib.request
 
+from bs4 import BeautifulSoup
+
 print('Loading function')
 
 s3 = boto3.resource('s3')
@@ -57,6 +59,17 @@ def lambda_handler(event, context):
     # Clear temp archive
     temp_archive_table.delete_item(Key={ 'Key': key })
     temp_archive_bucket.Object(key).delete()
+
+    # Modify index.html
+    public_index_html_path = f"{temp_archive_dir_public}/index.html"
+    if os.path.exists(public_index_html_path):
+        with open(public_index_html_path, mode='rt', encoding='utf-8') as f:
+            soup_index = BeautifulSoup(f.read(), 'html.parser')
+        link_manifest = soup_index.find('link', attrs={'rel': 'manifest'})
+        if link_manifest is not None:
+            link_manifest['crossorigin'] = 'use-credentials'
+            with open(public_index_html_path, 'w') as f:
+                f.write(str(soup_index))
 
     # Remove previous dist on S3
     origin_bucket.objects.filter(Prefix=f"{sub_domain}/").delete()
