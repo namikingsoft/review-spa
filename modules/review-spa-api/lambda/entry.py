@@ -57,6 +57,7 @@ def lambda_handler(event, context):
     uuidstr = str(uuid.uuid4())
     identifier = re.sub('[^a-zA-Z0-9]', '-', body['identifier'])
     identifier = re.sub('-+', '-', identifier)
+    identifier = identifier.lower()
     sub_domain = f"{identifier}--{repo_id}"
     review_spa_url = 'https://' + os.environ['CDN_WILDCARD_DOMAIN'].replace('*', sub_domain)
     temp_archive_table.put_item(
